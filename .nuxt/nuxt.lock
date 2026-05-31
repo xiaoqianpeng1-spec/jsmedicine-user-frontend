@@ -1,0 +1,9 @@
+{
+  "pid": 816,
+  "startedAt": 1780244382509,
+  "command": "dev",
+  "cwd": "C:/Desktop/NuxtProject",
+  "port": 3000,
+  "hostname": "::1",
+  "url": "http://[::1]:3000"
+}
