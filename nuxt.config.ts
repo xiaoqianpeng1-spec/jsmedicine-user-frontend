@@ -35,5 +35,5 @@ export default defineNuxtConfig({
   elementPlus: {
     importStyle: 'css',
     themes: ['dark'],
-  } as any,
+  },
 })
