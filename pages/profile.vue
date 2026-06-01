@@ -7,11 +7,11 @@
           <div class="user-card">
             <!-- 头像 + 角色标签 -->
             <div class="avatar-box">
-              <img :src="userInfo.avatar || defaultAvatar" alt="头像" class="avatar" />
-              <span class="role-tag">{{ userInfo.role || '学员' }}</span>
+              <img :src="displayInfo.avatar" alt="头像" class="avatar" />
+              <span class="role-tag">{{ displayInfo.role }}</span>
             </div>
-            <h2 class="username">{{ userInfo.nickname || userInfo.username || '未设置昵称' }}</h2>
-            <p class="motto">{{ userInfo.motto || '学习口号：加油！！' }}</p>
+            <h2 class="username">{{ displayInfo.nickname }}</h2>
+            <p class="motto">{{ displayInfo.motto }}</p>
             <div class="btn-group">
               <button class="btn edit-btn" @click="goEdit">编辑资料</button>
               <button class="btn logout-btn" @click="handleLogout">退出登录</button>
@@ -27,7 +27,7 @@
                 :class="{ active: activeMenu === item.id }"
                 @click="activeMenu = item.id"
               >
-                <span class="icon">{{ item.icon }}</span>
+                <span class="icon-wrap" :class="item.icon"></span>
                 <span class="text">{{ item.label }}</span>
               </li>
             </ul>
@@ -265,14 +265,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from '#imports'
 import { useUserStore } from '~/stores/user'
 import { storeToRefs } from 'pinia'
+import { authApi } from '~/utils/api/auth'
 
 const router = useRouter()
 const userStore = useUserStore()
 const { userInfo } = storeToRefs(userStore)
+
+userStore.loadFromCookie()
+userStore.initFromStorage()
 
 // 默认头像
 const defaultAvatar = 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=cute%20cat%20avatar%20portrait%20simple&image_size=square'
@@ -284,42 +288,60 @@ const activeMenu = ref('collect')
 const currentField = ref('')
 const avatarInput = ref<HTMLInputElement | null>(null)
 
-// 编辑表单 —— 完全关联登录用户信息
-const editForm = ref({
-  avatar: '',
-  nickname: '',
-  mobile: '',
-  role: '',
-  motto: '',
-  gender: '',
-  education: '',
-  city: '',
-  company: ''
+// 编辑表单初始化函数
+const initEditForm = () => {
+  return {
+    avatar: userInfo.value.avatar || '',
+    nickname: userInfo.value.nickname || userInfo.value.username || '',
+    mobile: userInfo.value.mobile || '',
+    role: userInfo.value.role || '',
+    motto: userInfo.value.motto || '',
+    gender: userInfo.value.gender || '',
+    education: userInfo.value.education || '',
+    city: userInfo.value.city || '',
+    company: userInfo.value.company || ''
+  }
+}
+
+// 编辑表单
+const editForm = ref(initEditForm())
+
+// 同步用户信息到编辑表单
+const syncEditForm = () => {
+  editForm.value = initEditForm()
+}
+
+// 侧边栏显示的数据源（编辑模式下显示editForm，否则显示userInfo）
+const displayInfo = computed(() => {
+  if (activeMenu.value === 'edit') {
+    return {
+      avatar: editForm.value.avatar || defaultAvatar,
+      nickname: editForm.value.nickname || editForm.value.username || '未设置昵称',
+      role: editForm.value.role || '学员',
+      motto: editForm.value.motto || '学习口号：加油！！'
+    }
+  }
+  return {
+    avatar: userInfo.value.avatar || defaultAvatar,
+    nickname: userInfo.value.nickname || userInfo.value.username || '未设置昵称',
+    role: userInfo.value.role || '学员',
+    motto: userInfo.value.motto || '学习口号：加油！！'
+  }
 })
 
 // 监听全局用户信息变化，自动同步表单
-watch(userInfo, (val) => {
-  editForm.value = {
-    avatar: val.avatar || '',
-    nickname: val.nickname || val.username || '',
-    mobile: val.mobile || '',
-    role: val.role || '',
-    motto: val.motto || '',
-    gender: val.gender || '',
-    education: val.education || '',
-    city: val.city || '',
-    company: val.company || ''
-  }
+watch(userInfo, () => {
+  syncEditForm()
 }, { immediate: true, deep: true })
 
 // 侧边栏菜单
 const navList = ref([
-  { id: 'collect', icon: '⭐', label: '我的收藏' },
-  { id: 'history', icon: '👁️', label: '浏览记录' },
-  { id: 'question', icon: '💬', label: '我的问答' },
-  { id: 'exam', icon: '📝', label: '我的考核' },
-  { id: 'stat', icon: '📊', label: '学习统计' },
-  { id: 'edit', icon: '✏️', label: '编辑资料' }
+  { id: 'collect', icon: 'icon-star', label: '我的收藏' },
+  { id: 'history', icon: 'icon-eye', label: '浏览记录' },
+  { id: 'question', icon: 'icon-chat', label: '我的问答' },
+  { id: 'exam', icon: 'icon-file', label: '我的考核' },
+  { id: 'stat', icon: 'icon-bar', label: '学习统计' },
+  { id: 'edit', icon: 'icon-edit', label: '编辑资料' }
 ])
 
 // 模拟列表数据
@@ -345,10 +367,10 @@ const examList = ref([
 ])
 
 const statList = ref([
-  { id: 1, icon: '📚', value: '48', label: '学习时长(小时)' },
-  { id: 2, icon: '🎬', value: '12', label: '完成课程' },
+  { id: 1, icon: '▤', value: '48', label: '学习时长(小时)' },
+  { id: 2, icon: '▢', value: '12', label: '完成课程' },
   { id: 3, icon: '✓', value: '6', label: '完成考核' },
-  { id: 4, icon: '💬', value: '8', label: '提问次数' }
+  { id: 4, icon: '▣', value: '8', label: '提问次数' }
 ])
 
 // 进入编辑页
@@ -382,9 +404,8 @@ const onAvatarChange = (e: Event) => {
 }
 
 // 保存资料
-const submitForm = () => {
-  // 更新全局用户信息
-  userStore.updateUserInfo({
+const submitForm = async () => {
+  const userData = {
     avatar: editForm.value.avatar,
     nickname: editForm.value.nickname,
     mobile: editForm.value.mobile,
@@ -394,7 +415,18 @@ const submitForm = () => {
     education: editForm.value.education,
     city: editForm.value.city,
     company: editForm.value.company
-  })
+  }
+
+  userStore.updateUserInfo(userData)
+
+  if (userStore.token) {
+    try {
+      await authApi.updateUserInfo(userStore.token, userData)
+    } catch (err) {
+      console.error('服务器保存失败，已本地保存:', err)
+    }
+  }
+
   alert('资料保存成功！')
   activeMenu.value = 'collect'
 }
@@ -408,25 +440,29 @@ const handleLogout = () => {
 }
 
 onMounted(() => {
-  // 初始化读取登录态 & 用户信息
-  userStore.loadFromCookie()
+  syncEditForm()
   if (userStore.token) {
-    userStore.fetchUserInfo()
+    const hasLocalData = userInfo.value.nickname || userInfo.value.username
+    if (!hasLocalData) {
+      userStore.fetchUserInfo()
+    }
   }
 })
 </script>
 
 <style scoped>
-/* 全局页面样式 — 参考图风格 */
+/* 全局页面样式 — 参考首页网站风格 */
 .profile-page {
-  background-color: #f5f5f5;
+  background-color: #f8fbf8;
   min-height: 100vh;
   font-size: 14px;
   color: #333;
+  font-family: "Microsoft YaHei", sans-serif;
 }
 .container {
-  width: 1040px;
+  width: 1200px;
   margin: 0 auto;
+  padding: 0 20px;
 }
 .profile-layout {
   display: flex;
@@ -435,82 +471,88 @@ onMounted(() => {
 
 /* 左侧侧边栏 */
 .sidebar {
-  width: 260px;
+  width: 280px;
   flex-shrink: 0;
 }
 .user-card {
   background: #fff;
-  padding: 25px 20px;
+  padding: 40px 24px;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 /* 头像框样式 */
 .avatar-box {
   position: relative;
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 10px;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
 }
 .avatar {
   width: 100%;
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
+  border: 3px solid #f0f0f0;
 }
 .role-tag {
   position: absolute;
   top: -5px;
-  right: -25px;
-  background: #4CAF50;
+  right: -15px;
+  background: #2d5a27;
   color: #fff;
   font-size: 12px;
-  padding: 3px 8px;
+  padding: 3px 10px;
   border-radius: 12px;
 }
 
 .username {
-  font-size: 16px;
-  font-weight: normal;
-  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0 0 10px;
+  color: #333;
 }
 .motto {
   color: #666;
-  font-size: 13px;
-  margin: 0 0 20px;
+  font-size: 14px;
+  margin: 0 0 24px;
 }
 .btn-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .btn {
-  height: 36px;
-  border-radius: 4px;
+  height: 40px;
+  border-radius: 6px;
   border: none;
   cursor: pointer;
-  font-size: 14px;
-  transition: 0.2s;
+  font-size: 15px;
+  transition: 0.3s;
 }
 .edit-btn {
-  background: #4CAF50;
+  background: #2d5a27;
   color: #fff;
 }
 .edit-btn:hover {
-  background: #388E3C;
+  background: #1e3d1b;
+  box-shadow: 0 4px 12px rgba(45,90,39,0.3);
 }
 .logout-btn {
-  background: #4CAF50;
-  color: #fff;
+  background: #f5f5f5;
+  color: #666;
+  border: 1px solid #ddd;
 }
 .logout-btn:hover {
-  background: #388E3C;
+  background: #eee;
 }
 
 /* 侧边导航 */
 .side-nav {
   background: #fff;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 .side-nav ul {
   list-style: none;
@@ -520,23 +562,121 @@ onMounted(() => {
 .nav-item {
   display: flex;
   align-items: center;
-  height: 44px;
-  padding: 0 20px;
+  height: 52px;
+  padding: 0 24px;
   cursor: pointer;
   color: #666;
-  transition: 0.2s;
+  transition: 0.3s;
 }
 .nav-item:hover {
-  background: #f5f5f5;
+  background: #f8fbf8;
 }
 .nav-item.active {
   background: #e8f5e9;
-  color: #4CAF50;
-  border-left: 3px solid #4CAF50;
+  color: #2d5a27;
+  border-left: 4px solid #2d5a27;
 }
-.icon {
-  font-size: 16px;
+.icon-wrap {
+  width: 16px;
+  height: 16px;
   margin-right: 10px;
+  display: inline-block;
+  position: relative;
+}
+
+/* 五角星图标 - 我的收藏 */
+.icon-star {
+  background: linear-gradient(135deg, transparent 35%, currentColor 35%, currentColor 65%, transparent 65%);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+/* 圆形图标 - 浏览记录 */
+.icon-eye {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  background: currentColor;
+}
+
+/* 聊天气泡图标 - 我的问答 */
+.icon-chat {
+  width: 16px;
+  height: 12px;
+  background: currentColor;
+  border-radius: 0 6px 6px 6px;
+}
+.icon-chat::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid currentColor;
+  border-bottom: 4px solid currentColor;
+  border-top: 4px solid transparent;
+}
+
+/* 文件图标 - 我的考核 */
+.icon-file {
+  width: 14px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+}
+.icon-file::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: currentColor;
+}
+
+/* 柱状图图标 - 学习统计 */
+.icon-bar {
+  width: 16px;
+  height: 14px;
+}
+.icon-bar::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: currentColor;
+}
+.icon-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 6px;
+  width: 4px;
+  height: 60%;
+  background: currentColor;
+}
+
+/* 编辑图标 - 编辑资料 */
+.icon-edit {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  transform: rotate(-30deg);
+}
+.icon-edit::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -4px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 6px solid transparent;
 }
 
 /* 右侧主内容区 */
@@ -545,53 +685,62 @@ onMounted(() => {
 }
 .breadcrumb {
   background: transparent;
-  padding: 12px 0;
+  padding: 16px 0;
   color: #999;
-  font-size: 12px;
+  font-size: 14px;
 }
 .content-card {
   background: #fff;
-  padding: 20px;
+  padding: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border-radius: 8px;
 }
 .card-title {
-  font-size: 14px;
-  font-weight: normal;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
-  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: bold;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f0f0f0;
+  margin: 0 0 24px 0;
+  color: #333;
 }
 
 /* 通用列表 */
 .list-wrap {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 .list-item {
   display: flex;
   align-items: center;
-  padding: 12px;
+  padding: 16px;
   background: #fafafa;
-  border-radius: 4px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+.list-item:hover {
+  background: #f0f5f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .item-img {
-  width: 60px;
-  height: 60px;
-  border-radius: 4px;
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
   object-fit: cover;
-  margin-right: 15px;
+  margin-right: 20px;
 }
 .item-info {
   flex: 1;
 }
 .item-name {
-  font-size: 14px;
-  font-weight: normal;
-  margin-bottom: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: #333;
 }
 .item-desc {
   color: #999;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* 问答项 */
@@ -599,33 +748,40 @@ onMounted(() => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 15px;
+  padding: 20px;
   background: #fafafa;
-  border-radius: 4px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+.q-item:hover {
+  background: #f0f5f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .q-left {
   flex: 1;
 }
 .q-title {
-  font-size: 14px;
-  margin-bottom: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #333;
 }
 .q-desc {
   color: #666;
-  font-size: 13px;
+  font-size: 14px;
 }
 .q-status {
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 13px;
 }
 .q-status.ok {
   background: #e8f5e9;
-  color: #4CAF50;
+  color: #2d5a27;
 }
 .q-status.wait {
   background: #fff7e6;
-  color: #FF9800;
+  color: #e65100;
 }
 
 /* 考核项 */
@@ -633,60 +789,72 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 15px;
+  padding: 20px;
   background: #fafafa;
-  border-radius: 4px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+.exam-item:hover {
+  background: #f0f5f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .exam-title {
-  font-size: 14px;
-  margin-bottom: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: #333;
 }
 .exam-date {
   color: #999;
-  font-size: 13px;
+  font-size: 14px;
 }
 .score {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: bold;
-  color: #4CAF50;
+  color: #2d5a27;
   display: block;
   text-align: right;
 }
 .grade {
-  font-size: 13px;
+  font-size: 14px;
 }
 .grade.excellent {
-  color: #4CAF50;
+  color: #2d5a27;
 }
 .grade.good {
-  color: #FF9800;
+  color: #e65100;
 }
 
 /* 统计卡片 */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 24px;
 }
 .stat-item {
   text-align: center;
-  padding: 20px;
+  padding: 30px 20px;
   background: #fafafa;
-  border-radius: 4px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+.stat-item:hover {
+  background: #f0f5f0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 .stat-icon {
-  font-size: 28px;
-  margin-bottom: 10px;
+  font-size: 32px;
+  margin-bottom: 12px;
 }
 .stat-num {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: bold;
-  color: #4CAF50;
-  margin-bottom: 6px;
+  color: #2d5a27;
+  margin-bottom: 8px;
 }
 .stat-text {
-  color: #999;
-  font-size: 13px;
+  color: #666;
+  font-size: 14px;
 }
 
 /* 编辑资料表单 */
@@ -694,24 +862,29 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
 }
 .edit-avatar-wrap {
   position: relative;
 }
 .edit-avatar {
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   cursor: pointer;
+}
+.edit-avatar .avatar {
+  border: 3px solid #f0f0f0;
 }
 .edit-role-tag {
   position: absolute;
-  right: -10px;
+  right: -15px;
   bottom: 5px;
-  background: #4CAF50;
+  background: #2d5a27;
   color: #fff;
   font-size: 12px;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 12px;
 }
 .file-input {
@@ -721,18 +894,19 @@ onMounted(() => {
 .form-row {
   display: flex;
   align-items: center;
-  height: 40px;
-  border-bottom: 1px solid #eee;
-  padding: 0 10px;
+  height: 50px;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 15px;
   cursor: pointer;
   position: relative;
 }
 .form-row:hover {
-  background: #fafafa;
+  background: #f8fbf8;
 }
 .form-label {
-  width: 80px;
+  width: 100px;
   color: #666;
+  font-size: 15px;
 }
 .form-value {
   flex: 1;

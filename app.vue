@@ -10,6 +10,7 @@ import { useUserStore } from '~/stores/user'
 const userStore = useUserStore()
 
 userStore.loadFromCookie()
+userStore.initFromStorage()
 </script>
 
 <style>

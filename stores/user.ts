@@ -3,6 +3,27 @@ import { ref } from 'vue'
 import { useCookie } from 'nuxt/app'
 import { authApi } from '~/utils/api/auth'
 
+const STORAGE_KEY = 'user-info'
+
+const loadFromStorage = (): any => {
+  if (typeof window === 'undefined') return {}
+  try {
+    const data = localStorage.getItem(STORAGE_KEY)
+    return data ? JSON.parse(data) : {}
+  } catch {
+    return {}
+  }
+}
+
+const saveToStorage = (data: any) => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  } catch (e) {
+    console.error('Failed to save to localStorage:', e)
+  }
+}
+
 export const useUserStore = defineStore('user', () => {
   const token = ref('')
   const isLoggedIn = ref(false)
@@ -22,7 +43,13 @@ export const useUserStore = defineStore('user', () => {
 
   const tokenCookie = useCookie('token', { maxAge: 86400 })
 
-  // 字段映射：后端字段 -> 前端字段
+  const initFromStorage = () => {
+    const saved = loadFromStorage()
+    if (saved && Object.keys(saved).length > 0) {
+      userInfo.value = { ...userInfo.value, ...saved }
+    }
+  }
+
   const mapUserFields = (data: any) => {
     return {
       id: data.id || data.userId || '',
@@ -43,7 +70,7 @@ export const useUserStore = defineStore('user', () => {
     token.value = newToken
     isLoggedIn.value = true
     tokenCookie.value = newToken
-    
+
     if (userData) {
       const mappedData = mapUserFields(userData)
       updateUserInfo(mappedData)
@@ -56,7 +83,7 @@ export const useUserStore = defineStore('user', () => {
     } catch (err) {
       console.error('Logout failed:', err)
     }
-    
+
     token.value = ''
     isLoggedIn.value = false
     userInfo.value = {
@@ -73,6 +100,7 @@ export const useUserStore = defineStore('user', () => {
       company: ''
     }
     tokenCookie.value = null
+    saveToStorage({})
   }
 
   const updateUserInfo = (info: any) => {
@@ -80,6 +108,7 @@ export const useUserStore = defineStore('user', () => {
       ...userInfo.value,
       ...info
     }
+    saveToStorage(userInfo.value)
   }
 
   const loadFromCookie = () => {
@@ -92,7 +121,7 @@ export const useUserStore = defineStore('user', () => {
 
   const fetchUserInfo = async () => {
     if (!token.value) return
-    
+
     try {
       const response = await authApi.getCurrentUser(token.value)
       if (response.data) {
@@ -112,8 +141,7 @@ export const useUserStore = defineStore('user', () => {
     logout,
     updateUserInfo,
     loadFromCookie,
-    fetchUserInfo
+    fetchUserInfo,
+    initFromStorage
   }
-}, {
-  persist: true // 开启持久化，刷新页面数据不丢失
 })

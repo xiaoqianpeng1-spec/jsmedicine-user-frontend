@@ -69,10 +69,12 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '~/stores/user'
+import { storeToRefs } from 'pinia'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const { userInfo } = storeToRefs(userStore)
 
 const topNavItems = [
   { path: '/home', label: '首页' },
@@ -87,11 +89,11 @@ const topNavItems = [
 
 // 从用户store获取头像和用户名
 const userAvatar = computed(() => {
-  return userStore.userInfo.avatar || 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=cute%20cat%20avatar%20portrait%20simple&image_size=square'
+  return userInfo.value.avatar || 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=cute%20cat%20avatar%20portrait%20simple&image_size=square'
 })
 
 const userName = computed(() => {
-  return userStore.userInfo.nickname || userStore.userInfo.username || '用户'
+  return userInfo.value.nickname || userInfo.value.username || '用户'
 })
 
 const showTopNav = computed(() => {

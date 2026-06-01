@@ -70,25 +70,7 @@
     <!-- 底部 -->
     <footer class="footer">
       <div class="container">
-        <div class="content">
-          <div class="contact">
-            <h4>联系我们</h4>
-            <p>微信公众号: wz123545</p>
-            <p>QQ: 1235345</p>
-            <p>Email: 1235345@163.com</p>
-          </div>
-          <div class="qrcodes">
-            <div>
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=gz" alt="" />
-              <span>关注公众号</span>
-            </div>
-            <div>
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=xcx" alt="" />
-              <span>江苏中医在线小程序</span>
-            </div>
-          </div>
-        </div>
-        <p class="copyright">Copyright@2013********苏ICP备12345678号</p>
+       
       </div>
     </footer>
   </div>
@@ -373,35 +355,7 @@ body {
 .footer {
   background: #333;
   color: #fff;
-  padding: 70px 0 30px;
-}
-.footer .content {
-  display: flex;
-  justify-content: space-between;
-  padding-bottom: 30px;
-  border-bottom: 1px solid #555;
-  margin-bottom: 30px;
-}
-.footer .contact h4 {
-  font-size: 20px;
-  margin-bottom: 20px;
-}
-.footer .contact p {
-  color: #ccc;
-  line-height: 2;
-}
-.footer .qrcodes {
-  display: flex;
-  gap: 40px;
-  text-align: center;
-}
-.footer .qrcodes img {
-  width: 120px;
-  height: 120px;
-  margin-bottom: 12px;
-}
-.footer .qrcodes span {
-  color: #ccc;
+  padding: 30px 0;
 }
 .copyright {
   text-align: center;

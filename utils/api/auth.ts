@@ -54,5 +54,15 @@ export const authApi = {
         Authorization: `Bearer ${token}`
       }
     })
+  },
+
+  async updateUserInfo(token: string, userData: any) {
+    return useApi('/api/v1/app/auth/update-info', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: userData
+    })
   }
 }
