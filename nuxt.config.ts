@@ -2,13 +2,13 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
-  modules: ['@pinia/nuxt'],
+  modules: ['@pinia/nuxt', '@element-plus/nuxt'],
 
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api/v1',
+      apiBase: (process as any).env.NUXT_PUBLIC_API_BASE || '/api/v1',
     },
   },
 
@@ -28,7 +28,12 @@ export default defineNuxtConfig({
 
   nitro: {
     routeRules: {
-      '/api/**': { proxy: `${process.env.NUXT_API_BASE || 'http://localhost:8080'}/api/**` },
+      '/api/**': { proxy: `${(process as any).env.NUXT_API_BASE || 'http://localhost:8080'}/api/**` },
     },
   },
+
+  elementPlus: {
+    importStyle: 'css',
+    themes: ['dark'],
+  } as any,
 })

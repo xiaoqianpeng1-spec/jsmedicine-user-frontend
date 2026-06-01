@@ -3,6 +3,40 @@
    基于设计稿还原
    ======================================== */
 
+/* === Element Plus Theme Variables === */
+:root {
+  /* Element Plus Primary Color */
+  --el-color-primary: #6dbf8e;
+  --el-color-primary-light-3: #89cba6;
+  --el-color-primary-light-5: #a5d8be;
+  --el-color-primary-light-7: #c1e4d6;
+  --el-color-primary-light-8: #d0ebde;
+  --el-color-primary-light-9: #def2e6;
+  --el-color-primary-dark-2: #5aa87a;
+
+  /* Element Plus Success Color */
+  --el-color-success: #6dbf8e;
+  --el-color-success-light-3: #89cba6;
+  --el-color-success-light-5: #a5d8be;
+  --el-color-success-light-7: #c1e4d6;
+  --el-color-success-light-8: #d0ebde;
+  --el-color-success-light-9: #def2e6;
+  --el-color-success-dark-2: #5aa87a;
+
+  /* Element Plus Border Radius */
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 4px;
+  --el-border-radius-large: 12px;
+
+  /* Element Plus Font Size */
+  --el-font-size-extra-small: 12px;
+  --el-font-size-small: 13px;
+  --el-font-size-base: 14px;
+  --el-font-size-medium: 16px;
+  --el-font-size-large: 18px;
+  --el-font-size-extra-large: 20px;
+}
+
 /* === CSS Variables === */
 :root {
   /* 主色 */
