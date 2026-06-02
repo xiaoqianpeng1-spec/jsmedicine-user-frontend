@@ -19,6 +19,24 @@
       </div>
     </div>
 
+    <!-- 搜索框 -->
+    <section class="search-section">
+      <div class="container">
+        <div class="search-box">
+          <input 
+            type="text" 
+            v-model="keyword" 
+            placeholder="搜索专题名称..." 
+            class="search-input"
+            @keyup.enter="loadTopics"
+          />
+          <button class="search-btn" @click="loadTopics">
+            搜索
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- 专题列表 -->
     <section class="topics-section">
       <div class="container">
@@ -27,22 +45,51 @@
             v-for="topic in topics" 
             :key="topic.id" 
             class="topic-card"
-            @click="goToTopic(topic.path)"
+            @click="goToTopic(topic.id)"
           >
             <div class="topic-image">
-              <img :src="topic.image" :alt="topic.title" />
+              <img :src="topic.coverUrl" :alt="topic.title" />
             </div>
             <div class="topic-info">
               <h3 class="topic-title">{{ topic.title }}</h3>
+              <p class="topic-summary">{{ topic.summary }}</p>
               <div class="topic-meta">
-                <span class="topic-tag">{{ topic.tag }}</span>
+                <span class="topic-date">{{ formatDate(topic.publishedAt) }}</span>
                 <div class="topic-stats">
-                  <span class="stat-views">👁️ {{ topic.views }}</span>
-                  <span class="stat-likes">⭐ {{ topic.likes }}</span>
+                  <span class="stat-views">👁️ {{ topic.viewCount }}</span>
+                  <span class="stat-favorites">❤️ {{ topic.favoriteCount }}</span>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+        <div v-if="topics.length === 0" class="empty-state">
+          <p>暂无专题</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 分页组件 -->
+    <section class="pagination-section" v-if="total > pageSize">
+      <div class="container">
+        <div class="pagination">
+          <button 
+            class="page-btn" 
+            :disabled="currentPage === 1"
+            @click="goToPage(currentPage - 1)"
+          >
+            上一页
+          </button>
+          <span class="page-info">
+            第 {{ currentPage }} / {{ totalPages }} 页
+          </span>
+          <button 
+            class="page-btn" 
+            :disabled="currentPage === totalPages"
+            @click="goToPage(currentPage + 1)"
+          >
+            下一页
+          </button>
         </div>
       </div>
     </section>
@@ -50,57 +97,67 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { topicsApi, type AppTopicResponse } from '~/utils/api/topics'
 
 const router = useRouter()
 
-const topics = ref([
-  {
-    id: 1,
-    path: '/topics/1',
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20training%20banner%20traditional%20style%20with%20doctors&image_size=landscape_16_9',
-    title: '基层卫生技术人员中医知识与技能培训',
-    tag: '中医培训',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 2,
-    path: '/topics/covid',
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20covid%20prevention%20banner%20mountain%20ink%20style&image_size=landscape_16_9',
-    title: '新冠肺炎疫情中医药防控专题培训',
-    tag: '新冠肺炎',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 3,
-    path: '/topics/covid',
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20covid%20prevention%20banner%20mountain%20ink%20style&image_size=landscape_16_9',
-    title: '新冠肺炎疫情中医药防控专题培训',
-    tag: '新冠肺炎',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 4,
-    path: '/topics/1',
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20training%20banner%20traditional%20style%20with%20doctors&image_size=landscape_16_9',
-    title: '基层卫生技术人员中医知识与技能培训',
-    tag: '中医培训',
-    views: 435678,
-    likes: 43
-  }
-])
+const topics = ref<AppTopicResponse[]>([])
+const keyword = ref('')
+const currentPage = ref(1)
+const pageSize = ref(8)
+const total = ref(0)
+
+const totalPages = computed(() => {
+  return Math.ceil(total.value / pageSize.value)
+})
 
 const goToHome = () => {
   router.push('/')
 }
 
-const goToTopic = (path: string) => {
-  router.push(path)
+const goToTopic = (id: number) => {
+  router.push(`/topics/${id}`)
 }
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+const loadTopics = async () => {
+  try {
+    const response = await topicsApi.getTopics({
+      page: currentPage.value,
+      size: pageSize.value,
+      keyword: keyword.value || undefined
+    })
+    if (response.success) {
+      topics.value = response.data.records
+      total.value = response.data.total
+      currentPage.value = response.data.page
+      pageSize.value = response.data.size
+    }
+  } catch (error) {
+    console.error('Failed to load topics:', error)
+  }
+}
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  loadTopics()
+}
+
+onMounted(() => {
+  loadTopics()
+})
 </script>
 
 <style scoped>
@@ -168,6 +225,48 @@ const goToTopic = (path: string) => {
   color: #ccc;
 }
 
+/* 搜索区域 */
+.search-section {
+  padding: 20px 0;
+  background: #fff;
+}
+
+.search-box {
+  display: flex;
+  max-width: 400px;
+  margin: 0 auto;
+  gap: 8px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 25px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.search-input:focus {
+  border-color: #2d5a27;
+}
+
+.search-btn {
+  padding: 12px 24px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.search-btn:hover {
+  background: #1f421b;
+}
+
 /* 专题列表区域 */
 .topics-section {
   padding: 30px 0 50px;
@@ -218,8 +317,19 @@ const goToTopic = (path: string) => {
   font-size: 16px;
   font-weight: 600;
   color: #333;
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
   line-height: 1.5;
+}
+
+.topic-summary {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .topic-meta {
@@ -228,12 +338,9 @@ const goToTopic = (path: string) => {
   align-items: center;
 }
 
-.topic-tag {
-  padding: 4px 12px;
-  background: #E8F5E9;
-  color: #2d5a27;
+.topic-date {
   font-size: 12px;
-  border-radius: 4px;
+  color: #999;
 }
 
 .topic-stats {
@@ -242,9 +349,55 @@ const goToTopic = (path: string) => {
 }
 
 .stat-views,
-.stat-likes {
+.stat-favorites {
   font-size: 13px;
   color: #999;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 16px;
+}
+
+/* 分页区域 */
+.pagination-section {
+  padding: 30px 0;
+  background: #fff;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.page-btn {
+  padding: 10px 20px;
+  background: #f5f7fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #e8f5e9;
+  border-color: #2d5a27;
+  color: #2d5a27;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 14px;
+  color: #666;
 }
 
 @media (max-width: 1200px) {

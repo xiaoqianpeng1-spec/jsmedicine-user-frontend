@@ -19,6 +19,24 @@
       </div>
     </div>
 
+    <!-- 搜索框 -->
+    <section class="search-section">
+      <div class="container">
+        <div class="search-box">
+          <input 
+            type="text" 
+            v-model="keyword" 
+            placeholder="搜索专家姓名..." 
+            class="search-input"
+            @keyup.enter="loadExperts"
+          />
+          <button class="search-btn" @click="loadExperts">
+            搜索
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- 主内容区域 -->
     <section class="main-section">
       <div class="container">
@@ -37,22 +55,25 @@
                   @click="toggleDepartment(department.id)"
                 >
                   <span class="expand-icon">{{ expandedDepartments.includes(department.id) ? '▼' : '▶' }}</span>
-                  <span class="department-name">{{ department.name }}</span>
+                  <span class="department-name">{{ department.categoryName }}</span>
                 </div>
                 <div 
                   v-if="expandedDepartments.includes(department.id)"
                   class="sub-departments"
                 >
                   <div 
-                    v-for="sub in department.subs" 
+                    v-for="sub in department.children" 
                     :key="sub.id"
                     class="sub-department"
-                    :class="{ active: selectedSub === sub.id }"
-                    @click.stop="selectSubDepartment(sub.id)"
+                    :class="{ active: selectedCategoryId === sub.id }"
+                    @click.stop="selectCategory(sub.id)"
                   >
-                    {{ sub.name }}
+                    {{ sub.categoryName }}
                   </div>
                 </div>
+              </div>
+              <div v-if="departments.length === 0" class="empty-departments">
+                <p>暂无科室分类</p>
               </div>
             </div>
           </aside>
@@ -61,20 +82,47 @@
           <main class="content-area">
             <div class="doctors-grid">
               <div 
-                v-for="doctor in doctors" 
+                v-for="doctor in experts" 
                 :key="doctor.id" 
                 class="doctor-card"
                 @click="goToDetail(doctor.id)"
               >
                 <div class="doctor-avatar-wrapper">
-                  <img :src="doctor.avatar" :alt="doctor.name" class="doctor-avatar" />
-                  <span class="doctor-status" :class="doctor.statusClass">{{ doctor.status }}</span>
+                  <img :src="doctor.avatarUrl" :alt="doctor.realName" class="doctor-avatar" />
+                  <span class="doctor-status online">在线</span>
                 </div>
-                <h3 class="doctor-name">{{ doctor.name }}</h3>
+                <h3 class="doctor-name">{{ doctor.realName }}</h3>
                 <p class="doctor-title">{{ doctor.title }}</p>
-                <span class="doctor-department-tag">{{ doctor.department }}</span>
+                <p class="doctor-organization">{{ doctor.organization }}</p>
+                <p class="doctor-specialty">{{ doctor.specialty }}</p>
               </div>
             </div>
+            <div v-if="experts.length === 0" class="empty-state">
+              <p>暂无专家</p>
+            </div>
+
+            <!-- 分页组件 -->
+            <section class="pagination-section" v-if="total > pageSize">
+              <div class="pagination">
+                <button 
+                  class="page-btn" 
+                  :disabled="currentPage === 1"
+                  @click="goToPage(currentPage - 1)"
+                >
+                  上一页
+                </button>
+                <span class="page-info">
+                  第 {{ currentPage }} / {{ totalPages }} 页
+                </span>
+                <button 
+                  class="page-btn" 
+                  :disabled="currentPage === totalPages"
+                  @click="goToPage(currentPage + 1)"
+                >
+                  下一页
+                </button>
+              </div>
+            </section>
           </main>
         </div>
       </div>
@@ -83,123 +131,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { expertsApi, type AppExpertCategoryResponse, type AppExpertResponse } from '~/utils/api/experts'
 
 const router = useRouter()
 
-const expandedDepartments = ref(['internal'])
-const selectedSub = ref('cardio')
+const expandedDepartments = ref<number[]>([])
+const selectedCategoryId = ref<number | null>(null)
+const keyword = ref('')
+const categories = ref<AppExpertCategoryResponse[]>([])
+const experts = ref<AppExpertResponse[]>([])
+const currentPage = ref(1)
+const pageSize = ref(6)
+const total = ref(0)
 
-const departments = ref([
-  {
-    id: 'internal',
-    name: '中医内科',
-    subs: [
-      { id: 'cardio', name: '心血管' },
-      { id: 'brain', name: '脑病' },
-      { id: 'geriatric', name: '老年病' },
-      { id: 'lung', name: '肺病' },
-      { id: 'spleen', name: '脾胃病' },
-      { id: 'kidney', name: '肾病' },
-      { id: 'tumor', name: '肿瘤' }
-    ]
-  },
-  {
-    id: 'surgery',
-    name: '中医外科',
-    subs: []
-  },
-  {
-    id: 'orthopedics',
-    name: '中医骨伤科',
-    subs: []
-  },
-  {
-    id: 'gynecology',
-    name: '中医妇科',
-    subs: []
-  },
-  {
-    id: 'pediatrics',
-    name: '中医儿科',
-    subs: []
-  },
-  {
-    id: 'ent',
-    name: '中医五官科',
-    subs: []
-  },
-  {
-    id: 'five-sense',
-    name: '中医五官科学',
-    subs: []
-  },
-  {
-    id: 'tuina',
-    name: '中医推拿',
-    subs: []
-  }
-])
+const departments = computed(() => {
+  const parentCategories = categories.value.filter(cat => cat.parentId === 0)
+  return parentCategories.map(parent => ({
+    ...parent,
+    children: categories.value.filter(cat => cat.parentId === parent.id)
+  }))
+})
 
-const doctors = ref([
-  {
-    id: 1,
-    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20female%20doctor%20portrait%20professional&image_size=square',
-    name: '林轶蓉',
-    title: '主任中医师',
-    department: '中医心血管',
-    status: '在线',
-    statusClass: 'online'
-  },
-  {
-    id: 2,
-    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20male%20doctor%20portrait%20professional&image_size=square',
-    name: '刘健',
-    title: '主任中医师',
-    department: '中医心血管',
-    status: '在线',
-    statusClass: 'online'
-  },
-  {
-    id: 3,
-    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20male%20doctor%20middle%20age%20portrait&image_size=square',
-    name: '郑晓丹',
-    title: '副主任中医师',
-    department: '中医心血管',
-    status: '在线',
-    statusClass: 'online'
-  },
-  {
-    id: 4,
-    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20male%20doctor%20portrait&image_size=square',
-    name: '王庆春',
-    title: '副主任中医师',
-    department: '中医心血管',
-    status: '在线',
-    statusClass: 'online'
-  },
-  {
-    id: 5,
-    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20female%20doctor%20portrait%20middle%20age&image_size=square',
-    name: '刘敏',
-    title: '主任中医师',
-    department: '中医心血管',
-    status: '在线',
-    statusClass: 'online'
-  },
-  {
-    id: 6,
-    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20male%20doctor%20senior%20portrait&image_size=square',
-    name: '邹冲',
-    title: '主任中医师',
-    department: '中医心血管',
-    status: '在线',
-    statusClass: 'online'
-  }
-])
+const totalPages = computed(() => {
+  return Math.ceil(total.value / pageSize.value)
+})
 
-const toggleDepartment = (id: string) => {
+const toggleDepartment = (id: number) => {
   const index = expandedDepartments.value.indexOf(id)
   if (index > -1) {
     expandedDepartments.value.splice(index, 1)
@@ -208,8 +167,10 @@ const toggleDepartment = (id: string) => {
   }
 }
 
-const selectSubDepartment = (id: string) => {
-  selectedSub.value = id
+const selectCategory = (id: number) => {
+  selectedCategoryId.value = selectedCategoryId.value === id ? null : id
+  currentPage.value = 1
+  loadExperts()
 }
 
 const goToHome = () => {
@@ -219,6 +180,53 @@ const goToHome = () => {
 const goToDetail = (id: number) => {
   router.push(`/consult/${id}`)
 }
+
+const loadCategories = async () => {
+  try {
+    const response = await expertsApi.getExpertCategories({
+      page: 1,
+      size: 100
+    })
+    if (response.success) {
+      categories.value = response.data.records
+      if (categories.value.length > 0 && categories.value[0].parentId === 0) {
+        expandedDepartments.value = [categories.value[0].id]
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load expert categories:', error)
+  }
+}
+
+const loadExperts = async () => {
+  try {
+    const response = await expertsApi.getExperts({
+      page: currentPage.value,
+      size: pageSize.value,
+      keyword: keyword.value || undefined,
+      categoryId: selectedCategoryId.value || undefined
+    })
+    if (response.success) {
+      experts.value = response.data.records
+      total.value = response.data.total
+      currentPage.value = response.data.page
+      pageSize.value = response.data.size
+    }
+  } catch (error) {
+    console.error('Failed to load experts:', error)
+  }
+}
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  loadExperts()
+}
+
+onMounted(() => {
+  loadCategories()
+  loadExperts()
+})
 </script>
 
 <style scoped>
@@ -287,6 +295,48 @@ const goToDetail = (id: number) => {
   color: #ccc;
 }
 
+/* 搜索区域 */
+.search-section {
+  padding: 20px 0;
+  background: #fff;
+}
+
+.search-box {
+  display: flex;
+  max-width: 400px;
+  margin: 0 auto;
+  gap: 8px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 25px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.search-input:focus {
+  border-color: #2d5a27;
+}
+
+.search-btn {
+  padding: 12px 24px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.search-btn:hover {
+  background: #1f421b;
+}
+
 /* 主内容区域 */
 .main-section {
   padding: 30px 0;
@@ -317,6 +367,13 @@ const goToDetail = (id: number) => {
 
 .department-tree {
   padding: 0;
+}
+
+.empty-departments {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
 }
 
 .department-item {
@@ -439,16 +496,68 @@ const goToDetail = (id: number) => {
 .doctor-title {
   font-size: 13px;
   color: #666;
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
 }
 
-.doctor-department-tag {
+.doctor-organization {
+  font-size: 12px;
+  color: #999;
+  margin: 0 0 4px 0;
+}
+
+.doctor-specialty {
   display: inline-block;
   padding: 4px 12px;
   background: #E8F5E9;
   color: #2d5a27;
   font-size: 12px;
   border-radius: 4px;
+  margin-top: 8px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 16px;
+}
+
+/* 分页区域 */
+.pagination-section {
+  padding: 30px 0;
+  text-align: center;
+}
+
+.pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.page-btn {
+  padding: 10px 20px;
+  background: #f5f7fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #e8f5e9;
+  border-color: #2d5a27;
+  color: #2d5a27;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 14px;
+  color: #666;
 }
 
 @media (max-width: 1200px) {
