@@ -13,13 +13,31 @@
       <div class="container">
         <div class="filter-tabs">
           <button 
-            v-for="tab in filterTabs" 
-            :key="tab.id"
+            v-for="category in categories" 
+            :key="category.id"
             class="filter-tab"
-            :class="{ active: activeTab === tab.id }"
-            @click="activeTab = tab.id"
+            :class="{ active: activeCategoryId === category.id }"
+            @click="handleCategoryChange(category.id)"
           >
-            {{ tab.name }}
+            {{ category.categoryName }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 搜索框 -->
+    <section class="search-section">
+      <div class="container">
+        <div class="search-box">
+          <input 
+            type="text" 
+            v-model="keyword" 
+            placeholder="搜索图书名称..." 
+            class="search-input"
+            @keyup.enter="loadBooks"
+          />
+          <button class="search-btn" @click="loadBooks">
+            搜索
           </button>
         </div>
       </div>
@@ -36,19 +54,47 @@
             @click="goToDetail(book.id)"
           >
             <div class="book-cover">
-              <img :src="book.cover" :alt="book.title" />
+              <img :src="book.coverUrl" :alt="book.bookName" />
               <div class="book-badge" v-if="book.isHot">热门</div>
             </div>
             <div class="book-info">
-              <h3 class="book-title">{{ book.title }}</h3>
+              <h3 class="book-title">{{ book.bookName }}</h3>
               <p class="book-author">{{ book.author }}</p>
-              <p class="book-desc">{{ book.desc }}</p>
+              <p class="book-desc">{{ book.introduction }}</p>
               <div class="book-meta">
-                <span class="book-pages">{{ book.pages }} 页</span>
-                <span class="book-reads">📖 {{ book.reads }} 人在读</span>
+                <span class="book-pages">{{ book.totalPages }} 页</span>
+                <span class="book-reads">📖 {{ book.browseCount }} 人在读</span>
               </div>
             </div>
           </div>
+        </div>
+        <div v-if="books.length === 0" class="empty-state">
+          <p>暂无图书</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 分页组件 -->
+    <section class="pagination-section" v-if="total > pageSize">
+      <div class="container">
+        <div class="pagination">
+          <button 
+            class="page-btn" 
+            :disabled="currentPage === 1"
+            @click="goToPage(currentPage - 1)"
+          >
+            上一页
+          </button>
+          <span class="page-info">
+            第 {{ currentPage }} / {{ totalPages }} 页
+          </span>
+          <button 
+            class="page-btn" 
+            :disabled="currentPage === totalPages"
+            @click="goToPage(currentPage + 1)"
+          >
+            下一页
+          </button>
         </div>
       </div>
     </section>
@@ -56,86 +102,83 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { booksApi, type AppBookResponse, type AppBookCategoryResponse } from '~/utils/api/books'
 
 const router = useRouter()
 
-const activeTab = ref('all')
-
-const filterTabs = [
-  { id: 'all', name: '全部' },
-  { id: 'classic', name: '经典著作' },
-  { id: 'modern', name: '现代研究' },
-  { id: 'clinical', name: '临床实践' }
-]
-
-const books = ref([
-  {
-    id: 1,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20traditional%20medicine%20book%20cover%20ancient%20style&image_size=square',
-    title: '黄帝内经',
-    author: '佚名',
-    desc: '中医经典著作，奠定中医理论基础',
-    pages: 580,
-    reads: 12580,
-    isHot: true
-  },
-  {
-    id: 2,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20herbs%20book%20cover&image_size=square',
-    title: '本草纲目',
-    author: '李时珍',
-    desc: '中药学巨著，收录1892种药物',
-    pages: 1200,
-    reads: 8960,
-    isHot: true
-  },
-  {
-    id: 3,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20prescription%20book%20cover&image_size=square',
-    title: '伤寒论',
-    author: '张仲景',
-    desc: '中医临床经典，辨证论治典范',
-    pages: 320,
-    reads: 6540,
-    isHot: false
-  },
-  {
-    id: 4,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20diagnosis%20book%20cover&image_size=square',
-    title: '中医诊断学',
-    author: '邓铁涛',
-    desc: '现代中医诊断学教材',
-    pages: 450,
-    reads: 10320,
-    isHot: false
-  },
-  {
-    id: 5,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20acupuncture%20book%20cover&image_size=square',
-    title: '针灸大成',
-    author: '杨继洲',
-    desc: '针灸学经典著作',
-    pages: 680,
-    reads: 7890,
-    isHot: false
-  },
-  {
-    id: 6,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20modern%20book%20cover&image_size=square',
-    title: '中医内科学',
-    author: '张伯礼',
-    desc: '现代中医内科临床指南',
-    pages: 850,
-    reads: 5670,
-    isHot: false
-  }
+const activeCategoryId = ref(0)
+const categories = ref<AppBookCategoryResponse[]>([
+  { id: 0, parentId: 0, categoryName: '全部', sortOrder: 0 }
 ])
 
-const goToDetail = (id: number) => {
-  router.push(`/knowledge/detail/${id}`)
+const books = ref<AppBookResponse[]>([])
+const keyword = ref('')
+const currentPage = ref(1)
+const pageSize = ref(6)
+const total = ref(0)
+
+const totalPages = computed(() => {
+  return Math.ceil(total.value / pageSize.value)
+})
+
+const handleCategoryChange = (categoryId: number) => {
+  activeCategoryId.value = categoryId
+  currentPage.value = 1
+  loadBooks()
 }
+
+const goToDetail = (id: number) => {
+  router.push(`/books/${id}`)
+}
+
+const loadBooks = async () => {
+  try {
+    const response = await booksApi.getBooks({
+      page: currentPage.value,
+      size: pageSize.value,
+      keyword: keyword.value || undefined,
+      categoryId: activeCategoryId.value === 0 ? undefined : activeCategoryId.value
+    })
+    if (response.success) {
+      books.value = response.data.records
+      total.value = response.data.total
+      currentPage.value = response.data.page
+      pageSize.value = response.data.size
+    }
+  } catch (error) {
+    console.error('Failed to load books:', error)
+  }
+}
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  loadBooks()
+}
+
+const loadCategories = async () => {
+  try {
+    const response = await booksApi.getBookCategories({
+      page: 1,
+      size: 100
+    })
+    if (response.success && response.data.records.length > 0) {
+      categories.value = [
+        { id: 0, parentId: 0, categoryName: '全部', sortOrder: 0 },
+        ...response.data.records
+      ]
+    }
+  } catch (error) {
+    console.error('Failed to load categories:', error)
+  }
+}
+
+onMounted(() => {
+  loadCategories()
+  loadBooks()
+})
 </script>
 
 <style scoped>
@@ -285,6 +328,94 @@ const goToDetail = (id: number) => {
 .book-reads {
   font-size: 12px;
   color: #999;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 16px;
+}
+
+/* 搜索区域 */
+.search-section {
+  padding: 20px 0;
+  background: #fff;
+}
+
+.search-box {
+  display: flex;
+  max-width: 400px;
+  margin: 0 auto;
+  gap: 8px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 25px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.search-input:focus {
+  border-color: #2d5a27;
+}
+
+.search-btn {
+  padding: 12px 24px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.search-btn:hover {
+  background: #1f421b;
+}
+
+/* 分页区域 */
+.pagination-section {
+  padding: 30px 0;
+  background: #fff;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.page-btn {
+  padding: 10px 20px;
+  background: #f5f7fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #e8f5e9;
+  border-color: #2d5a27;
+  color: #2d5a27;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 14px;
+  color: #666;
 }
 
 @media (max-width: 1200px) {
