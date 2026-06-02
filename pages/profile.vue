@@ -256,6 +256,10 @@
                   placeholder="请输入单位"
                 />
               </div>
+
+              <div class="form-actions">
+                <button type="submit" class="save-btn">保存修改</button>
+              </div>
             </form>
           </div>
         </main>
@@ -383,8 +387,24 @@ const clickAvatar = () => {
   avatarInput.value?.click()
 }
 
+// 计算文件MD5
+const calculateMD5 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const arrayBuffer = e.target?.result as ArrayBuffer
+      const hash = Array.from(new Uint8Array(arrayBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+      resolve(hash)
+    }
+    reader.onerror = reject
+    reader.readAsArrayBuffer(file)
+  })
+}
+
 // 头像上传处理
-const onAvatarChange = (e: Event) => {
+const onAvatarChange = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
@@ -392,15 +412,54 @@ const onAvatarChange = (e: Event) => {
     alert('请选择图片文件')
     return
   }
-  if (file.size > 2 * 1024 * 1024) {
+  const maxSize = 2 * 1024 * 1024
+  if (file.size > maxSize) {
     alert('图片大小不能超过 2MB')
     return
   }
-  const reader = new FileReader()
-  reader.onload = (ev) => {
-    editForm.value.avatar = ev.target?.result as string
+
+  const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp']
+  if (!validTypes.includes(file.type)) {
+    alert('图片格式不支持，请选择 jpeg、png、jpg 或 webp 格式')
+    return
   }
-  reader.readAsDataURL(file)
+
+  try {
+    // 计算文件MD5
+    const fileMd5 = await calculateMD5(file)
+    
+    // 先检查头像文件
+    if (userStore.token) {
+      await authApi.checkAvatar(userStore.token, file.name, file.size, fileMd5)
+    }
+
+    // 创建FormData上传
+    const formData = new FormData()
+    formData.append('file', file)
+
+    // 上传头像
+    if (userStore.token) {
+      const result = await authApi.uploadAvatar(userStore.token, formData)
+      editForm.value.avatar = result.data?.avatarUrl || ''
+    }
+
+    // 本地预览
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      editForm.value.avatar = ev.target?.result as string
+    }
+    reader.readAsDataURL(file)
+
+    alert('头像上传成功')
+  } catch (err) {
+    console.error('头像上传失败:', err)
+    // 本地预览（即使上传失败也显示预览）
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      editForm.value.avatar = ev.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
 }
 
 // 保存资料
@@ -927,5 +986,28 @@ onMounted(() => {
   padding: 0 10px;
   margin-left: 10px;
   outline: none;
+}
+.form-actions {
+  padding: 20px 15px;
+  margin-top: 20px;
+}
+.save-btn {
+  width: 100%;
+  height: 44px;
+  background: linear-gradient(135deg, #43b05c 0%, #38a169 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.save-btn:hover {
+  background: linear-gradient(135deg, #38a169 0%, #2d8a5a 100%);
+  box-shadow: 0 4px 12px rgba(67, 176, 92, 0.4);
+}
+.save-btn:active {
+  transform: scale(0.98);
 }
 </style>

@@ -1,144 +1,77 @@
 <template>
   <div class="exam-page">
-    <div class="container">
-      <div class="page-header">
-        <h1 class="page-title">在线考核</h1>
-        <p class="page-desc">检验学习成果，巩固知识要点</p>
+    <!-- 顶部横幅 -->
+    <section class="page-banner">
+      <div class="container">
+        <h1 class="banner-title">在线考核</h1>
+        <p class="banner-desc">检验学习成果，巩固知识要点</p>
       </div>
+    </section>
 
-      <div class="exam-stats">
-        <div class="stat-card">
-          <span class="stat-value">{{ totalExams }}</span>
-          <span class="stat-label">已参加考核</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-value">{{ avgScore }}</span>
-          <span class="stat-label">平均成绩</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-value">{{ passedCount }}</span>
-          <span class="stat-label">通过考核</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-value">{{ certification }}</span>
-          <span class="stat-label">获得证书</span>
-        </div>
-      </div>
-
-      <div class="exam-list">
-        <div 
-          v-for="exam in exams" 
-          :key="exam.id" 
-          class="exam-card"
-          @click="goToExam(exam.id)"
-        >
-          <div class="exam-icon">{{ exam.icon }}</div>
-          <div class="exam-info">
-            <h3 class="exam-title">{{ exam.title }}</h3>
-            <p class="exam-desc">{{ exam.desc }}</p>
-            <div class="exam-meta">
-              <span class="exam-duration">{{ exam.duration }}分钟</span>
-              <span class="exam-questions">{{ exam.questions }}道题</span>
-              <span class="exam-pass">及格线: {{ exam.passScore }}分</span>
-            </div>
-          </div>
-          <div class="exam-status">
-            <span v-if="exam.status === 'completed'" class="status-completed">已完成</span>
-            <span v-else-if="exam.status === 'in-progress'" class="status-progress">进行中</span>
-            <span v-else class="status-pending">待开始</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="certification-section">
-        <h3 class="section-title">我的证书</h3>
-        <div class="cert-list">
-          <div 
-            v-for="cert in certifications" 
-            :key="cert.id" 
-            class="cert-card"
-          >
-            <div class="cert-badge">{{ cert.icon }}</div>
-            <div class="cert-info">
-              <h4 class="cert-title">{{ cert.title }}</h4>
-              <span class="cert-date">{{ cert.date }}</span>
-            </div>
-          </div>
+    <!-- 面包屑导航 -->
+    <div class="breadcrumb-section">
+      <div class="container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" @click="goToHome">首页</span>
+          <span class="breadcrumb-separator">></span>
+          <span class="breadcrumb-item active">考核</span>
         </div>
       </div>
     </div>
+
+    <!-- 考核列表 -->
+    <section class="exam-section">
+      <div class="container">
+        <div class="exam-list">
+          <div 
+            v-for="exam in exams" 
+            :key="exam.id" 
+            class="exam-card"
+          >
+            <div class="exam-content">
+              <h3 class="exam-title">{{ exam.title }}</h3>
+              <p class="exam-desc">{{ exam.desc }}</p>
+            </div>
+            <button class="exam-button" @click="goToExam(exam.id)">立即答题</button>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from '#imports'
+import { useRouter } from 'vue-router'
 
 const router = useRouter()
-
-const totalExams = ref(8)
-const avgScore = ref('85分')
-const passedCount = ref(6)
-const certification = ref('3项')
 
 const exams = ref([
   {
     id: 1,
-    icon: '📝',
-    title: '中医基础理论考核',
-    desc: '考核中医基础理论知识掌握程度',
-    duration: 60,
-    questions: 50,
-    passScore: 60,
-    status: 'completed'
+    title: '实用中医方药学模拟练习卷',
+    desc: '共10题，限时10分钟'
   },
   {
     id: 2,
-    icon: '💉',
-    title: '针灸学专业考核',
-    desc: '考核针灸学理论与实操知识',
-    duration: 90,
-    questions: 60,
-    passScore: 60,
-    status: 'completed'
+    title: '中医适宜技术模拟练习卷',
+    desc: '共10题，限时10分钟'
   },
   {
     id: 3,
-    icon: '🌿',
-    title: '中药学知识考核',
-    desc: '考核中药基础知识与方剂配伍',
-    duration: 60,
-    questions: 40,
-    passScore: 60,
-    status: 'in-progress'
+    title: '实用中医理论基础模拟练习卷',
+    desc: '共10题，限时10分钟'
   },
   {
     id: 4,
-    icon: '👩⚕️',
-    title: '中医诊断学考核',
-    desc: '考核望闻问切四诊方法与辨证论治',
-    duration: 90,
-    questions: 50,
-    passScore: 60,
-    status: 'pending'
-  },
-  {
-    id: 5,
-    icon: '📚',
-    title: '中医经典著作考核',
-    desc: '考核黄帝内经、伤寒论等经典知识',
-    duration: 120,
-    questions: 80,
-    passScore: 60,
-    status: 'pending'
+    title: '实用针灸推拿学模拟练习卷',
+    desc: '共10题，限时10分钟'
   }
 ])
 
-const certifications = ref([
-  { id: 1, icon: '🏆', title: '中医基础理论证书', date: '2024-01-10' },
-  { id: 2, icon: '🎖️', title: '针灸学专业证书', date: '2024-01-15' },
-  { id: 3, icon: '⭐', title: '优秀学员证书', date: '2024-01-20' }
-])
+const goToHome = () => {
+  router.push('/')
+}
 
 const goToExam = (id: number) => {
   router.push(`/exam/${id}`)
@@ -147,94 +80,110 @@ const goToExam = (id: number) => {
 
 <style scoped>
 .exam-page {
+  font-family: "Microsoft YaHei", sans-serif;
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px 0;
+  background: #fff;
 }
 
 .container {
-  max-width: 800px;
+  width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-.page-header {
+/* 顶部横幅 */
+.page-banner {
+  background: linear-gradient(135deg, #2d5a27 0%, #38a169 100%);
+  padding: 60px 0;
   text-align: center;
-  margin-bottom: 40px;
 }
 
-.page-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
+.banner-title {
+  font-size: 36px;
+  color: #fff;
+  margin: 0 0 12px 0;
+  font-weight: 600;
 }
 
-.page-desc {
-  font-size: 14px;
-  color: #999;
+.banner-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
 
-.exam-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 40px;
-}
-
-.stat-card {
+/* 面包屑导航 */
+.breadcrumb-section {
+  padding: 16px 0;
   background: #fff;
-  padding: 20px;
-  border-radius: 16px;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.stat-value {
-  display: block;
-  font-size: 28px;
-  font-weight: 700;
-  color: #4CAF50;
-  margin-bottom: 4px;
-}
-
-.stat-label {
-  font-size: 13px;
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
   color: #666;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.breadcrumb-item:hover {
+  color: #2d5a27;
+}
+
+.breadcrumb-item.active {
+  color: #999;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: #ccc;
+}
+
+/* 考核列表区域 */
+.exam-section {
+  padding: 50px 0;
 }
 
 .exam-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 40px;
+  gap: 20px;
 }
 
 .exam-card {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 20px;
   background: #fff;
-  padding: 20px;
-  border-radius: 16px;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 30px 40px;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  position: relative;
+  overflow: hidden;
 }
 
-.exam-card:hover {
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+.exam-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 200'%3E%3Cpath fill='%23f0f0f0' fill-opacity='0.5' d='M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1104,176L1152,192L1152,200L1104,200C1056,200,960,200,864,200C768,200,672,200,576,200C480,200,384,200,288,200C192,200,96,200,48,200L0,200Z'%3E%3C/path%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.3;
+  pointer-events: none;
 }
 
-.exam-icon {
-  font-size: 48px;
-  flex-shrink: 0;
-}
-
-.exam-info {
-  flex: 1;
-  min-width: 0;
+.exam-content {
+  position: relative;
+  z-index: 1;
 }
 
 .exam-title {
@@ -246,108 +195,48 @@ const goToExam = (id: number) => {
 
 .exam-desc {
   font-size: 14px;
-  color: #666;
-  margin: 0 0 12px 0;
-}
-
-.exam-meta {
-  display: flex;
-  gap: 16px;
-}
-
-.exam-duration,
-.exam-questions,
-.exam-pass {
-  font-size: 13px;
   color: #999;
+  margin: 0;
 }
 
-.exam-status {
-  flex-shrink: 0;
-}
-
-.status-completed {
-  padding: 8px 16px;
-  background: #E8F5E9;
-  color: #4CAF50;
+.exam-button {
+  position: relative;
+  z-index: 1;
+  padding: 10px 24px;
+  background: #2d5a27;
+  color: #fff;
+  border: 1px solid #2d5a27;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.status-progress {
-  padding: 8px 16px;
-  background: #FFF8E1;
-  color: #FF9800;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.status-pending {
-  padding: 8px 16px;
-  background: #f5f5f5;
-  color: #999;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.certification-section {
-  margin-bottom: 40px;
-}
-
-.section-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 20px 0;
-}
-
-.cert-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.cert-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.exam-button:hover {
   background: #fff;
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  color: #2d5a27;
 }
 
-.cert-badge {
-  font-size: 36px;
-}
-
-.cert-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 4px 0;
-}
-
-.cert-date {
-  font-size: 13px;
-  color: #999;
+@media (max-width: 1200px) {
+  .container {
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
-  .exam-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
   .exam-card {
     flex-direction: column;
     align-items: flex-start;
+    gap: 16px;
   }
   
-  .exam-status {
+  .exam-button {
     align-self: flex-end;
+  }
+  
+  .banner-title {
+    font-size: 28px;
   }
 }
 </style>

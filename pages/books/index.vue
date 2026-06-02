@@ -1,12 +1,16 @@
 <template>
   <div class="books-page">
-    <div class="container">
-      <div class="page-header">
-        <h1 class="page-title">数字图书馆</h1>
-        <p class="page-desc">海量中医经典著作，随时随地阅读学习</p>
+    <!-- 顶部横幅 -->
+    <section class="page-banner">
+      <div class="container">
+        <h1 class="banner-title">数字图书馆</h1>
+        <p class="banner-desc">海量中医经典著作，随时随地阅读学习</p>
       </div>
+    </section>
 
-      <div class="filter-bar">
+    <!-- 筛选区域 -->
+    <section class="filter-section">
+      <div class="container">
         <div class="filter-tabs">
           <button 
             v-for="tab in filterTabs" 
@@ -19,30 +23,35 @@
           </button>
         </div>
       </div>
+    </section>
 
-      <div class="books-grid">
-        <div 
-          v-for="book in books" 
-          :key="book.id" 
-          class="book-card"
-          @click="goToDetail(book.id)"
-        >
-          <div class="book-cover">
-            <img :src="book.cover" :alt="book.title" />
-            <div class="book-badge" v-if="book.isHot">热门</div>
-          </div>
-          <div class="book-info">
-            <h3 class="book-title">{{ book.title }}</h3>
-            <p class="book-author">{{ book.author }}</p>
-            <p class="book-desc">{{ book.desc }}</p>
-            <div class="book-meta">
-              <span class="book-pages">{{ book.pages }} 页</span>
-              <span class="book-reads">📖 {{ book.reads }} 人在读</span>
+    <!-- 图书列表 -->
+    <section class="books-section">
+      <div class="container">
+        <div class="books-grid">
+          <div 
+            v-for="book in books" 
+            :key="book.id" 
+            class="book-card"
+            @click="goToDetail(book.id)"
+          >
+            <div class="book-cover">
+              <img :src="book.cover" :alt="book.title" />
+              <div class="book-badge" v-if="book.isHot">热门</div>
+            </div>
+            <div class="book-info">
+              <h3 class="book-title">{{ book.title }}</h3>
+              <p class="book-author">{{ book.author }}</p>
+              <p class="book-desc">{{ book.desc }}</p>
+              <div class="book-meta">
+                <span class="book-pages">{{ book.pages }} 页</span>
+                <span class="book-reads">📖 {{ book.reads }} 人在读</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -131,49 +140,53 @@ const goToDetail = (id: number) => {
 
 <style scoped>
 .books-page {
+  font-family: "Microsoft YaHei", sans-serif;
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px 0;
+  background: #fff;
 }
 
 .container {
-  max-width: 1200px;
+  width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-.page-header {
+/* 顶部横幅 */
+.page-banner {
+  background: linear-gradient(135deg, #2d5a27 0%, #38a169 100%);
+  padding: 60px 0;
   text-align: center;
-  margin-bottom: 40px;
 }
 
-.page-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
+.banner-title {
+  font-size: 36px;
+  color: #fff;
+  margin: 0 0 12px 0;
+  font-weight: 600;
 }
 
-.page-desc {
-  font-size: 14px;
-  color: #999;
+.banner-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
 
-.filter-bar {
-  margin-bottom: 30px;
+/* 筛选区域 */
+.filter-section {
+  background: #f8fbf8;
+  padding: 20px 0;
 }
 
 .filter-tabs {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .filter-tab {
-  padding: 10px 20px;
+  padding: 10px 24px;
   border: none;
-  border-radius: 20px;
+  border-radius: 25px;
   background: #fff;
   color: #666;
   font-size: 14px;
@@ -183,9 +196,14 @@ const goToDetail = (id: number) => {
 }
 
 .filter-tab.active {
-  background: #4CAF50;
+  background: #2d5a27;
   color: #fff;
-  border-color: #4CAF50;
+  border-color: #2d5a27;
+}
+
+/* 图书列表区域 */
+.books-section {
+  padding: 50px 0;
 }
 
 .books-grid {
@@ -196,16 +214,16 @@ const goToDetail = (id: number) => {
 
 .book-card {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .book-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.15);
+  box-shadow: 0 8px 24px rgba(45, 90, 39, 0.15);
 }
 
 .book-cover {
@@ -244,7 +262,7 @@ const goToDetail = (id: number) => {
 
 .book-author {
   font-size: 14px;
-  color: #4CAF50;
+  color: #2d5a27;
   margin: 0 0 8px 0;
 }
 
@@ -269,9 +287,19 @@ const goToDetail = (id: number) => {
   color: #999;
 }
 
+@media (max-width: 1200px) {
+  .container {
+    width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .books-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .banner-title {
+    font-size: 28px;
   }
 }
 

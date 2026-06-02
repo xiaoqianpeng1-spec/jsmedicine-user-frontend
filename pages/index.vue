@@ -157,6 +157,7 @@ definePageMeta({
 import { ref, computed } from 'vue'
 import { useRouter } from '#imports'
 import { useUserStore } from '~/stores/user'
+import { authApi } from '~/utils/api/auth'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -190,15 +191,7 @@ const sendSms = async () => {
   }
 
   try {
-    const res = await fetch('/api/v1/app/auth/sms-code', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ mobile: phone })
-    })
-
-    const data = await res.json()
+    const data = await authApi.sendSmsCode(phone)
 
     if (data.success) {
       console.log('发送成功', data)
@@ -230,18 +223,7 @@ const handleSmsLogin = async () => {
   loading.value = true
 
   try {
-    const res = await fetch('/api/v1/app/auth/sms-login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        mobile: form.value.mobile,
-        code: form.value.code
-      })
-    })
-
-    const data: any = await res.json()
+    const data: any = await authApi.smsLogin(form.value.mobile, form.value.code)
 
     if (data.success && data.data) {
       const { accessToken, user } = data.data
@@ -268,27 +250,25 @@ const handlePasswordLogin = async () => {
   loading.value = true
 
   try {
-    const res = await fetch('/api/v1/app/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        username: form.value.username,
-        password: form.value.password
-      })
-    })
+    console.log('[Login Attempt] Username:', form.value.username)
+    console.log('[Login Attempt] Password:', form.value.password)
+    
+    const data: any = await authApi.login(form.value.username, form.value.password)
 
-    const data: any = await res.json()
-
+    console.log('[Login Response]', data)
+    
     if (data.success && data.data) {
       const { accessToken, user } = data.data
+      console.log('[Login Success] Token:', accessToken)
+      console.log('[Login Success] User:', user)
       await userStore.login(accessToken, user)
       router.push('/profile')
     } else {
+      console.log('[Login Failed] Message:', data.message)
       alert(data.message || '账号或密码错误')
     }
   } catch (err: any) {
+    console.error('[Login Error]', err)
     alert(err.message || '账号或密码错误')
   } finally {
     loading.value = false

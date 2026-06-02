@@ -653,7 +653,7 @@ const _inlineRuntimeConfig = {
     }
   },
   "public": {
-    "apiBase": ""
+    "apiBase": "/api/v1"
   }
 };
 const envOptions = {
@@ -2057,7 +2057,7 @@ const _3MzHrApJkaWLA_o8mKQi8BMxpcUcceeVD6dVbQT9o = (function(nitro) {
 
 const rootDir = "D:/work/Userweb";
 
-const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"中医在线平台 - 传承中医智慧，守护健康生活"}],"link":[{"rel":"icon","type":"image/svg+xml","href":"/favicon.ico"}],"style":[],"script":[],"noscript":[],"title":"中医在线"};
+const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"中医在线平台"}],"link":[{"rel":"icon","href":"/favicon.ico"}],"style":[],"script":[],"noscript":[],"title":"中医在线"};
 
 const appRootTag = "div";
 

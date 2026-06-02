@@ -1,210 +1,317 @@
 <template>
   <div class="video-page">
-    <div class="container">
-      <div class="page-header">
-        <h1 class="page-title">视频课程</h1>
-        <p class="page-desc">名师授课，随时随地学习中医知识</p>
+    <!-- 顶部横幅 -->
+    <section class="page-banner">
+      <div class="container">
+        <h1 class="banner-title">视频课程</h1>
+        <p class="banner-desc">名师授课，随时随地学习中医知识</p>
       </div>
+    </section>
 
-      <div class="filter-bar">
-        <div class="filter-tabs">
-          <button 
-            v-for="tab in filterTabs" 
-            :key="tab.id"
-            class="filter-tab"
-            :class="{ active: activeTab === tab.id }"
-            @click="activeTab = tab.id"
-          >
-            {{ tab.name }}
-          </button>
-        </div>
-      </div>
-
-      <div class="video-grid">
-        <div 
-          v-for="video in videos" 
-          :key="video.id" 
-          class="video-card"
-          @click="goToDetail(video.id)"
-        >
-          <div class="video-thumbnail">
-            <img :src="video.thumbnail" :alt="video.title" />
-            <div class="video-duration">{{ video.duration }}</div>
-            <div class="video-play-icon">▶</div>
-          </div>
-          <div class="video-info">
-            <h3 class="video-title">{{ video.title }}</h3>
-            <p class="video-teacher">{{ video.teacher }}</p>
-            <div class="video-meta">
-              <span class="video-views">👁️ {{ video.views }}</span>
-              <span class="video-date">{{ video.date }}</span>
-            </div>
-          </div>
+    <!-- 面包屑导航 -->
+    <div class="breadcrumb-section">
+      <div class="container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" @click="goToHome">首页</span>
+          <span class="breadcrumb-separator">></span>
+          <span class="breadcrumb-item active">视频</span>
         </div>
       </div>
     </div>
+
+    <!-- 视频列表 -->
+    <section class="video-section">
+      <div class="container">
+        <div class="video-grid">
+          <div 
+            v-for="video in videos" 
+            :key="video.id" 
+            class="video-card"
+            @click="goToDetail(video.id)"
+          >
+            <div class="video-thumbnail">
+              <img :src="video.thumbnail" :alt="video.title" />
+              <div class="video-play-overlay">
+                <span class="play-btn">▶</span>
+              </div>
+            </div>
+            <h3 class="video-title">{{ video.title }}</h3>
+            <p class="video-desc">{{ video.desc }}</p>
+            <div class="video-tags">
+              <span class="video-tag" :class="video.tagClass">{{ video.tag }}</span>
+            </div>
+            <div class="video-stats">
+              <span class="stat-views">👁️ {{ video.views }}</span>
+              <span class="stat-likes">⭐ {{ video.likes }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 分页 -->
+        <div class="pagination">
+          <button class="page-btn prev" @click="prevPage">‹</button>
+          <button 
+            v-for="page in totalPages" 
+            :key="page" 
+            class="page-btn"
+            :class="{ active: currentPage === page }"
+            @click="currentPage = page"
+          >
+            {{ page }}
+          </button>
+          <button class="page-btn next" @click="nextPage">›</button>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const activeTab = ref('all')
-
-const filterTabs = [
-  { id: 'all', name: '全部' },
-  { id: 'basic', name: '基础课程' },
-  { id: 'clinical', name: '临床技能' },
-  { id: 'specialty', name: '专科课程' }
-]
+const currentPage = ref(1)
+const pageSize = 12
 
 const videos = ref([
   {
     id: 1,
-    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20lecture%20classroom&image_size=landscape_16_9',
-    title: '中医基础理论 - 阴阳学说',
-    teacher: '王教授',
-    duration: '45:30',
-    views: 12580,
-    date: '2024-01-15'
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医理论基础',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-red',
+    views: 435678,
+    likes: 43
   },
   {
     id: 2,
-    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20acupuncture%20demonstration%20video&image_size=landscape_16_9',
-    title: '针灸实操教学 - 常用穴位精讲',
-    teacher: '李医师',
-    duration: '52:15',
-    views: 8960,
-    date: '2024-01-14'
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医方药学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-blue',
+    views: 435678,
+    likes: 43
   },
   {
     id: 3,
-    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20herbs%20preparation%20video&image_size=landscape_16_9',
-    title: '中药炮制技术详解',
-    teacher: '张药师',
-    duration: '38:45',
-    views: 6540,
-    date: '2024-01-13'
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医药适宜技术',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-purple',
+    views: 435678,
+    likes: 43
   },
   {
     id: 4,
-    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20diagnosis%20video&image_size=landscape_16_9',
-    title: '中医四诊法 - 望诊入门',
-    teacher: '陈教授',
-    duration: '42:00',
-    views: 10320,
-    date: '2024-01-12'
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20green%20style%20traditional&image_size=landscape_4_3',
+    title: '实用针灸推拿学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-green',
+    views: 435678,
+    likes: 43
   },
   {
     id: 5,
-    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20massage%20therapy&image_size=landscape_16_9',
-    title: '推拿手法教学 - 基础手法',
-    teacher: '刘医师',
-    duration: '35:20',
-    views: 7890,
-    date: '2024-01-11'
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医理论基础',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-red',
+    views: 435678,
+    likes: 43
   },
   {
     id: 6,
-    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20prescription%20video&image_size=landscape_16_9',
-    title: '方剂学 - 经典方剂解析',
-    teacher: '赵教授',
-    duration: '58:30',
-    views: 5670,
-    date: '2024-01-10'
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医方药学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-blue',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 7,
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医药适宜技术',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-purple',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 8,
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20green%20style%20traditional&image_size=landscape_4_3',
+    title: '实用针灸推拿学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-green',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 9,
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医理论基础',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-red',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 10,
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医方药学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-blue',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 11,
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医药适宜技术',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-purple',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 12,
+    thumbnail: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20video%20cover%20green%20style%20traditional&image_size=landscape_4_3',
+    title: '实用针灸推拿学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-green',
+    views: 435678,
+    likes: 43
   }
 ])
 
+const totalPages = computed(() => Math.ceil(videos.value.length / pageSize))
+
+const goToHome = () => {
+  router.push('/')
+}
+
 const goToDetail = (id: number) => {
-  router.push(`/detail/${id}`)
+  router.push(`/video/${id}`)
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
 }
 </script>
 
 <style scoped>
 .video-page {
+  font-family: "Microsoft YaHei", sans-serif;
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px 0;
+  background: #fff;
 }
 
 .container {
-  max-width: 1200px;
+  width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-.page-header {
+/* 顶部横幅 */
+.page-banner {
+  background: linear-gradient(135deg, #2d5a27 0%, #38a169 100%);
+  padding: 60px 0;
   text-align: center;
-  margin-bottom: 40px;
 }
 
-.page-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
+.banner-title {
+  font-size: 36px;
+  color: #fff;
+  margin: 0 0 12px 0;
+  font-weight: 600;
 }
 
-.page-desc {
-  font-size: 14px;
-  color: #999;
+.banner-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
 
-.filter-bar {
-  margin-bottom: 30px;
+/* 面包屑导航 */
+.breadcrumb-section {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.filter-tabs {
+.breadcrumb {
   display: flex;
+  align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-}
-
-.filter-tab {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 20px;
-  background: #fff;
-  color: #666;
   font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 1px solid #e0e0e0;
+  color: #666;
 }
 
-.filter-tab.active {
-  background: #4CAF50;
-  color: #fff;
-  border-color: #4CAF50;
+.breadcrumb-item {
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.breadcrumb-item:hover {
+  color: #2d5a27;
+}
+
+.breadcrumb-item.active {
+  color: #999;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: #ccc;
+}
+
+/* 视频列表区域 */
+.video-section {
+  padding: 30px 0 50px;
 }
 
 .video-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
 
 .video-card {
-  background: #fff;
-  border-radius: 16px;
-  overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
 }
 
 .video-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.15);
 }
 
 .video-thumbnail {
   position: relative;
-  height: 160px;
+  height: 140px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
 }
 
 .video-thumbnail img {
@@ -213,76 +320,131 @@ const goToDetail = (id: number) => {
   object-fit: cover;
 }
 
-.video-duration {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 4px 8px;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 12px;
-}
-
-.video-play-icon {
+.video-play-overlay {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 50px;
-  height: 50px;
-  background: rgba(76, 175, 80, 0.9);
+  width: 44px;
+  height: 44px;
+  background: rgba(45, 90, 39, 0.9);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.play-btn {
   color: #fff;
-  font-size: 20px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.video-card:hover .video-play-icon {
-  opacity: 1;
-}
-
-.video-info {
-  padding: 16px;
+  font-size: 16px;
+  margin-left: 2px;
 }
 
 .video-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #333;
-  margin: 0 0 8px 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin: 0 0 6px 0;
 }
 
-.video-teacher {
-  font-size: 13px;
-  color: #4CAF50;
-  margin: 0 0 12px 0;
-}
-
-.video-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.video-views,
-.video-date {
+.video-desc {
   font-size: 12px;
   color: #999;
+  margin: 0 0 8px 0;
+}
+
+.video-tags {
+  margin-bottom: 8px;
+}
+
+.video-tag {
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 2px;
+}
+
+.tag-red {
+  background: #FDECEC;
+  color: #D93030;
+}
+
+.tag-blue {
+  background: #E8F4FD;
+  color: #3B82F6;
+}
+
+.tag-purple {
+  background: #F3E8FF;
+  color: #8B5CF6;
+}
+
+.tag-green {
+  background: #E8F5E9;
+  color: #22C55E;
+}
+
+.video-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-views,
+.stat-likes {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 分页 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+}
+
+.page-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.page-btn:hover {
+  border-color: #2d5a27;
+  color: #2d5a27;
+}
+
+.page-btn.active {
+  background: #2d5a27;
+  border-color: #2d5a27;
+  color: #fff;
+}
+
+.page-btn.prev,
+.page-btn.next {
+  width: auto;
+  padding: 0 12px;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
   .video-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .banner-title {
+    font-size: 28px;
   }
 }
 

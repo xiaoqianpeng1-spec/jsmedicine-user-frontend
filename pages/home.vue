@@ -45,7 +45,7 @@
       </div>
     </section>
 
-    <!-- 最新资讯 -->
+    <!-- 最新资讯
     <section class="news">
       <div class="container">
         <div class="head">
@@ -65,7 +65,7 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
     <!-- 底部 -->
     <footer class="footer">

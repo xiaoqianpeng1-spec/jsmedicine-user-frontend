@@ -1,54 +1,84 @@
 <template>
   <div class="consult-page">
-    <div class="container">
-      <div class="page-header">
-        <h1 class="page-title">专家咨询</h1>
-        <p class="page-desc">专业问题咨询，名师在线解答</p>
+    <!-- 顶部横幅 -->
+    <section class="page-banner">
+      <div class="container">
+        <h1 class="banner-title">专家咨询</h1>
+        <p class="banner-desc">专业问题咨询，名师在线解答</p>
       </div>
+    </section>
 
-      <div class="consult-types">
-        <div 
-          v-for="type in consultTypes" 
-          :key="type.id" 
-          class="consult-type-card"
-          @click="selectedType = type.id"
-          :class="{ active: selectedType === type.id }"
-        >
-          <span class="type-icon">{{ type.icon }}</span>
-          <span class="type-name">{{ type.name }}</span>
-        </div>
-      </div>
-
-      <div class="doctors-list">
-        <div 
-          v-for="doctor in doctors" 
-          :key="doctor.id" 
-          class="doctor-card"
-          @click="goToConsult(doctor.id)"
-        >
-          <div class="doctor-avatar">
-            <img :src="doctor.avatar" :alt="doctor.name" />
-            <span class="doctor-status" :class="doctor.statusClass">{{ doctor.status }}</span>
-          </div>
-          <div class="doctor-info">
-            <div class="doctor-header">
-              <h3 class="doctor-name">{{ doctor.name }}</h3>
-              <span class="doctor-title">{{ doctor.title }}</span>
-            </div>
-            <p class="doctor-department">{{ doctor.department }}</p>
-            <p class="doctor-specialty">{{ doctor.specialty }}</p>
-            <div class="doctor-stats">
-              <span class="stat-item">⭐ {{ doctor.rating }}</span>
-              <span class="stat-item">👥 {{ doctor.consultCount }} 次咨询</span>
-              <span class="stat-item">⏱️ {{ doctor.responseTime }}分钟</span>
-            </div>
-          </div>
-          <div class="consult-btn">
-            <span>咨询</span>
-          </div>
+    <!-- 面包屑导航 -->
+    <div class="breadcrumb-section">
+      <div class="container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" @click="goToHome">首页</span>
+          <span class="breadcrumb-separator">></span>
+          <span class="breadcrumb-item active">咨询</span>
         </div>
       </div>
     </div>
+
+    <!-- 主内容区域 -->
+    <section class="main-section">
+      <div class="container">
+        <div class="main-content">
+          <!-- 左侧科室分类 -->
+          <aside class="sidebar">
+            <div class="sidebar-title">科室分类</div>
+            <div class="department-tree">
+              <div 
+                v-for="department in departments" 
+                :key="department.id"
+                class="department-item"
+              >
+                <div 
+                  class="department-header"
+                  @click="toggleDepartment(department.id)"
+                >
+                  <span class="expand-icon">{{ expandedDepartments.includes(department.id) ? '▼' : '▶' }}</span>
+                  <span class="department-name">{{ department.name }}</span>
+                </div>
+                <div 
+                  v-if="expandedDepartments.includes(department.id)"
+                  class="sub-departments"
+                >
+                  <div 
+                    v-for="sub in department.subs" 
+                    :key="sub.id"
+                    class="sub-department"
+                    :class="{ active: selectedSub === sub.id }"
+                    @click.stop="selectSubDepartment(sub.id)"
+                  >
+                    {{ sub.name }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- 右侧专家列表 -->
+          <main class="content-area">
+            <div class="doctors-grid">
+              <div 
+                v-for="doctor in doctors" 
+                :key="doctor.id" 
+                class="doctor-card"
+                @click="goToDetail(doctor.id)"
+              >
+                <div class="doctor-avatar-wrapper">
+                  <img :src="doctor.avatar" :alt="doctor.name" class="doctor-avatar" />
+                  <span class="doctor-status" :class="doctor.statusClass">{{ doctor.status }}</span>
+                </div>
+                <h3 class="doctor-name">{{ doctor.name }}</h3>
+                <p class="doctor-title">{{ doctor.title }}</p>
+                <span class="doctor-department-tag">{{ doctor.department }}</span>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -58,176 +88,323 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const selectedType = ref('all')
+const expandedDepartments = ref(['internal'])
+const selectedSub = ref('cardio')
 
-const consultTypes = [
-  { id: 'all', icon: '🏥', name: '全部' },
-  { id: 'internal', icon: '🩺', name: '内科' },
-  { id: 'gynecology', icon: '🌸', name: '妇科' },
-  { id: 'pediatrics', icon: '👶', name: '儿科' },
-  { id: 'acupuncture', icon: '💉', name: '针灸' },
-  { id: 'massage', icon: '💆', name: '推拿' }
-]
+const departments = ref([
+  {
+    id: 'internal',
+    name: '中医内科',
+    subs: [
+      { id: 'cardio', name: '心血管' },
+      { id: 'brain', name: '脑病' },
+      { id: 'geriatric', name: '老年病' },
+      { id: 'lung', name: '肺病' },
+      { id: 'spleen', name: '脾胃病' },
+      { id: 'kidney', name: '肾病' },
+      { id: 'tumor', name: '肿瘤' }
+    ]
+  },
+  {
+    id: 'surgery',
+    name: '中医外科',
+    subs: []
+  },
+  {
+    id: 'orthopedics',
+    name: '中医骨伤科',
+    subs: []
+  },
+  {
+    id: 'gynecology',
+    name: '中医妇科',
+    subs: []
+  },
+  {
+    id: 'pediatrics',
+    name: '中医儿科',
+    subs: []
+  },
+  {
+    id: 'ent',
+    name: '中医五官科',
+    subs: []
+  },
+  {
+    id: 'five-sense',
+    name: '中医五官科学',
+    subs: []
+  },
+  {
+    id: 'tuina',
+    name: '中医推拿',
+    subs: []
+  }
+])
 
 const doctors = ref([
   {
     id: 1,
-    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20doctor%20portrait%20professional&image_size=square',
-    name: '张明华',
-    title: '主任医师',
-    department: '中医内科',
-    specialty: '擅长治疗消化系统疾病、慢性胃炎、胃溃疡等',
-    rating: 4.9,
-    consultCount: 2580,
-    responseTime: 15,
+    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20female%20doctor%20portrait%20professional&image_size=square',
+    name: '林轶蓉',
+    title: '主任中医师',
+    department: '中医心血管',
     status: '在线',
     statusClass: 'online'
   },
   {
     id: 2,
-    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20female%20doctor%20portrait&image_size=square',
-    name: '李秀珍',
-    title: '副主任医师',
-    department: '中医妇科',
-    specialty: '擅长治疗月经不调、痛经、妇科炎症等',
-    rating: 4.8,
-    consultCount: 1890,
-    responseTime: 20,
+    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20male%20doctor%20portrait%20professional&image_size=square',
+    name: '刘健',
+    title: '主任中医师',
+    department: '中医心血管',
     status: '在线',
     statusClass: 'online'
   },
   {
     id: 3,
-    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20male%20doctor%20portrait&image_size=square',
-    name: '王建国',
-    title: '主治医师',
-    department: '针灸科',
-    specialty: '擅长治疗颈椎病、腰椎间盘突出、面瘫等',
-    rating: 4.7,
-    consultCount: 1250,
-    responseTime: 25,
-    status: '忙碌',
-    statusClass: 'busy'
+    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20male%20doctor%20middle%20age%20portrait&image_size=square',
+    name: '郑晓丹',
+    title: '副主任中医师',
+    department: '中医心血管',
+    status: '在线',
+    statusClass: 'online'
   },
   {
     id: 4,
-    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20senior%20doctor%20portrait&image_size=square',
-    name: '陈玉华',
-    title: '主任医师',
-    department: '中医儿科',
-    specialty: '擅长治疗小儿感冒、咳嗽、消化不良等',
-    rating: 4.9,
-    consultCount: 3120,
-    responseTime: 12,
+    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20male%20doctor%20portrait&image_size=square',
+    name: '王庆春',
+    title: '副主任中医师',
+    department: '中医心血管',
+    status: '在线',
+    statusClass: 'online'
+  },
+  {
+    id: 5,
+    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20female%20doctor%20portrait%20middle%20age&image_size=square',
+    name: '刘敏',
+    title: '主任中医师',
+    department: '中医心血管',
+    status: '在线',
+    statusClass: 'online'
+  },
+  {
+    id: 6,
+    avatar: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20male%20doctor%20senior%20portrait&image_size=square',
+    name: '邹冲',
+    title: '主任中医师',
+    department: '中医心血管',
     status: '在线',
     statusClass: 'online'
   }
 ])
 
-const goToConsult = (id: number) => {
+const toggleDepartment = (id: string) => {
+  const index = expandedDepartments.value.indexOf(id)
+  if (index > -1) {
+    expandedDepartments.value.splice(index, 1)
+  } else {
+    expandedDepartments.value.push(id)
+  }
+}
+
+const selectSubDepartment = (id: string) => {
+  selectedSub.value = id
+}
+
+const goToHome = () => {
+  router.push('/')
+}
+
+const goToDetail = (id: number) => {
   router.push(`/consult/${id}`)
 }
 </script>
 
 <style scoped>
 .consult-page {
+  font-family: "Microsoft YaHei", sans-serif;
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 20px 0;
 }
 
 .container {
-  max-width: 1000px;
+  width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-.page-header {
+/* 顶部横幅 */
+.page-banner {
+  background: linear-gradient(135deg, #2d5a27 0%, #38a169 100%);
+  padding: 60px 0;
   text-align: center;
-  margin-bottom: 40px;
 }
 
-.page-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
+.banner-title {
+  font-size: 36px;
+  color: #fff;
+  margin: 0 0 12px 0;
+  font-weight: 600;
 }
 
-.page-desc {
-  font-size: 14px;
-  color: #999;
+.banner-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
 
-.consult-types {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
+/* 面包屑导航 */
+.breadcrumb-section {
+  padding: 16px 0;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.consult-type-card {
+.breadcrumb {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
-  background: #fff;
-  border-radius: 24px;
+  font-size: 14px;
+  color: #666;
+}
+
+.breadcrumb-item {
   cursor: pointer;
+  transition: color 0.3s;
+}
+
+.breadcrumb-item:hover {
+  color: #2d5a27;
+}
+
+.breadcrumb-item.active {
+  color: #999;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: #ccc;
+}
+
+/* 主内容区域 */
+.main-section {
+  padding: 30px 0;
+}
+
+.main-content {
+  display: flex;
+  gap: 24px;
+}
+
+/* 左侧侧边栏 */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.sidebar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  padding: 0 0 12px 0;
+  border-bottom: 2px solid #2d5a27;
+  margin-bottom: 12px;
+}
+
+.department-tree {
+  padding: 0;
+}
+
+.department-item {
+  margin-bottom: 4px;
+}
+
+.department-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+.department-header:hover {
+  background: #f8fbf8;
+}
+
+.expand-icon {
+  font-size: 10px;
+  color: #999;
+}
+
+.department-name {
+  font-size: 14px;
+  color: #333;
+}
+
+.sub-departments {
+  padding-left: 24px;
+}
+
+.sub-department {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  border-radius: 4px;
   transition: all 0.3s;
-  border: 1px solid #e0e0e0;
 }
 
-.consult-type-card.active {
-  background: #4CAF50;
-  border-color: #4CAF50;
+.sub-department:hover {
+  background: #f0f8f0;
+  color: #2d5a27;
 }
 
-.consult-type-card.active .type-name {
+.sub-department.active {
+  background: #2d5a27;
   color: #fff;
 }
 
-.type-icon {
-  font-size: 20px;
+/* 右侧内容区域 */
+.content-area {
+  flex: 1;
 }
 
-.type-name {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
-}
-
-.doctors-list {
-  display: flex;
-  flex-direction: column;
+.doctors-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
 .doctor-card {
-  display: flex;
-  align-items: center;
-  gap: 20px;
   background: #fff;
+  border-radius: 8px;
   padding: 20px;
-  border-radius: 16px;
+  text-align: center;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .doctor-card:hover {
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.doctor-avatar-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 12px;
 }
 
 .doctor-avatar {
-  position: relative;
-  flex-shrink: 0;
-}
-
-.doctor-avatar img {
-  width: 80px;
-  height: 80px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -236,14 +413,14 @@ const goToConsult = (id: number) => {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  padding: 4px 8px;
-  border-radius: 10px;
-  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 10px;
   font-weight: 500;
 }
 
 .doctor-status.online {
-  background: #4CAF50;
+  background: #2d5a27;
   color: #fff;
 }
 
@@ -252,83 +429,59 @@ const goToConsult = (id: number) => {
   color: #fff;
 }
 
-.doctor-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.doctor-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
 .doctor-name {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #333;
-  margin: 0;
+  margin: 0 0 6px 0;
 }
 
 .doctor-title {
-  padding: 4px 12px;
-  background: #E8F5E9;
-  color: #4CAF50;
-  font-size: 12px;
-  border-radius: 4px;
-}
-
-.doctor-department {
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
   margin: 0 0 8px 0;
 }
 
-.doctor-specialty {
-  font-size: 13px;
-  color: #999;
-  line-height: 1.5;
-  margin: 0 0 12px 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.doctor-department-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #E8F5E9;
+  color: #2d5a27;
+  font-size: 12px;
+  border-radius: 4px;
 }
 
-.doctor-stats {
-  display: flex;
-  gap: 20px;
-}
-
-.stat-item {
-  font-size: 13px;
-  color: #999;
-}
-
-.consult-btn {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #4CAF50 0%, #2D5A27 100%);
-  color: #fff;
-  border-radius: 24px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.consult-btn:hover {
-  transform: scale(1.05);
+@media (max-width: 1200px) {
+  .container {
+    width: 100%;
+  }
+  
+  .doctors-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
-  .doctor-card {
+  .main-content {
     flex-direction: column;
-    align-items: flex-start;
   }
   
-  .consult-btn {
-    align-self: flex-end;
+  .sidebar {
+    width: 100%;
+  }
+  
+  .doctors-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .banner-title {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .doctors-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

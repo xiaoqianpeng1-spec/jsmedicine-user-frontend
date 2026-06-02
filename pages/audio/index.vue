@@ -1,168 +1,317 @@
 <template>
   <div class="audio-page">
-    <div class="container">
-      <div class="page-header">
-        <h1 class="page-title">音频课程</h1>
-        <p class="page-desc">随时随地，听学中医知识</p>
+    <!-- 顶部横幅 -->
+    <section class="page-banner">
+      <div class="container">
+        <h1 class="banner-title">音频课程</h1>
+        <p class="banner-desc">随时随地，听学中医知识</p>
       </div>
+    </section>
 
-      <div class="audio-list">
-        <div 
-          v-for="audio in audios" 
-          :key="audio.id" 
-          class="audio-card"
-          :class="{ playing: currentAudio === audio.id }"
-          @click="togglePlay(audio.id)"
-        >
-          <div class="audio-cover">
-            <img :src="audio.cover" :alt="audio.title" />
-            <div class="play-status">
-              <span v-if="currentAudio === audio.id" class="playing-icon">⏸</span>
-              <span v-else class="play-icon">▶</span>
-            </div>
-          </div>
-          <div class="audio-info">
-            <h3 class="audio-title">{{ audio.title }}</h3>
-            <p class="audio-teacher">{{ audio.teacher }}</p>
-            <div class="audio-progress" v-if="currentAudio === audio.id">
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: progress + '%' }"></div>
-              </div>
-              <span class="progress-time">03:45 / {{ audio.duration }}</span>
-            </div>
-          </div>
-          <div class="audio-duration">{{ audio.duration }}</div>
+    <!-- 面包屑导航 -->
+    <div class="breadcrumb-section">
+      <div class="container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" @click="goToHome">首页</span>
+          <span class="breadcrumb-separator">></span>
+          <span class="breadcrumb-item active">音频</span>
         </div>
       </div>
     </div>
+
+    <!-- 音频列表 -->
+    <section class="audio-section">
+      <div class="container">
+        <div class="audio-grid">
+          <div 
+            v-for="audio in audios" 
+            :key="audio.id" 
+            class="audio-card"
+            @click="goToDetail(audio.id)"
+          >
+            <div class="audio-cover">
+              <img :src="audio.cover" :alt="audio.title" />
+              <div class="audio-play-overlay">
+                <span class="play-btn">🎵</span>
+              </div>
+            </div>
+            <h3 class="audio-title">{{ audio.title }}</h3>
+            <p class="audio-desc">{{ audio.desc }}</p>
+            <div class="audio-tags">
+              <span class="audio-tag" :class="audio.tagClass">{{ audio.tag }}</span>
+            </div>
+            <div class="audio-stats">
+              <span class="stat-views">👁️ {{ audio.views }}</span>
+              <span class="stat-likes">⭐ {{ audio.likes }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 分页 -->
+        <div class="pagination">
+          <button class="page-btn prev" @click="prevPage">‹</button>
+          <button 
+            v-for="page in totalPages" 
+            :key="page" 
+            class="page-btn"
+            :class="{ active: currentPage === page }"
+            @click="currentPage = page"
+          >
+            {{ page }}
+          </button>
+          <button class="page-btn next" @click="nextPage">›</button>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
-const currentAudio = ref<number | null>(null)
-const progress = ref(35)
+const router = useRouter()
+
+const currentPage = ref(1)
+const pageSize = 12
 
 const audios = ref([
   {
     id: 1,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20podcast%20audio%20cover%20green%20theme&image_size=square',
-    title: '中医养生之道 - 四季养生法',
-    teacher: '王教授',
-    duration: '28:30'
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医理论基础',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-red',
+    views: 435678,
+    likes: 43
   },
   {
     id: 2,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20herbs%20audio%20cover&image_size=square',
-    title: '中药小故事 - 黄芪的传说',
-    teacher: '李药师',
-    duration: '15:45'
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医方药学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-blue',
+    views: 435678,
+    likes: 43
   },
   {
     id: 3,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20acupuncture%20audio%20cover%20green&image_size=square',
-    title: '针灸入门 - 经络学说详解',
-    teacher: '张医师',
-    duration: '32:10'
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医药适宜技术',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-purple',
+    views: 435678,
+    likes: 43
   },
   {
     id: 4,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20diagnosis%20audio%20cover&image_size=square',
-    title: '中医四诊 - 脉诊入门',
-    teacher: '陈教授',
-    duration: '25:55'
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20green%20style%20traditional&image_size=landscape_4_3',
+    title: '实用针灸推拿学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-green',
+    views: 435678,
+    likes: 43
   },
   {
     id: 5,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20health%20audio%20cover&image_size=square',
-    title: '中医食疗 - 药膳养生',
-    teacher: '刘营养师',
-    duration: '20:30'
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医理论基础',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-red',
+    views: 435678,
+    likes: 43
   },
   {
     id: 6,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20classics%20audio%20cover&image_size=square',
-    title: '黄帝内经 - 素问解读',
-    teacher: '赵教授',
-    duration: '45:00'
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医方药学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-blue',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 7,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医药适宜技术',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-purple',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 8,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20green%20style%20traditional&image_size=landscape_4_3',
+    title: '实用针灸推拿学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-green',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 9,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医理论基础',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-red',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 10,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医方药学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-blue',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 11,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医药适宜技术',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-purple',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 12,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20green%20style%20traditional&image_size=landscape_4_3',
+    title: '实用针灸推拿学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-green',
+    views: 435678,
+    likes: 43
   }
 ])
 
-const togglePlay = (id: number) => {
-  if (currentAudio.value === id) {
-    currentAudio.value = null
-  } else {
-    currentAudio.value = id
+const totalPages = computed(() => Math.ceil(audios.value.length / pageSize))
+
+const goToHome = () => {
+  router.push('/')
+}
+
+const goToDetail = (id: number) => {
+  router.push(`/audio/${id}`)
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
   }
 }
 </script>
 
 <style scoped>
 .audio-page {
+  font-family: "Microsoft YaHei", sans-serif;
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px 0;
+  background: #fff;
 }
 
 .container {
-  max-width: 800px;
+  width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-.page-header {
+/* 顶部横幅 */
+.page-banner {
+  background: linear-gradient(135deg, #2d5a27 0%, #38a169 100%);
+  padding: 60px 0;
   text-align: center;
-  margin-bottom: 40px;
 }
 
-.page-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
+.banner-title {
+  font-size: 36px;
+  color: #fff;
+  margin: 0 0 12px 0;
+  font-weight: 600;
 }
 
-.page-desc {
-  font-size: 14px;
-  color: #999;
+.banner-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
 
-.audio-list {
+/* 面包屑导航 */
+.breadcrumb-section {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.breadcrumb {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.breadcrumb-item:hover {
+  color: #2d5a27;
+}
+
+.breadcrumb-item.active {
+  color: #999;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: #ccc;
+}
+
+/* 音频列表区域 */
+.audio-section {
+  padding: 30px 0 50px;
+}
+
+.audio-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
 
 .audio-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: #fff;
-  padding: 16px;
-  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
 }
 
 .audio-card:hover {
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
-}
-
-.audio-card.playing {
-  background: #E8F5E9;
-  border: 1px solid #4CAF50;
+  transform: translateY(-4px);
 }
 
 .audio-cover {
   position: relative;
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
+  height: 140px;
+  border-radius: 8px;
   overflow: hidden;
-  flex-shrink: 0;
+  margin-bottom: 12px;
 }
 
 .audio-cover img {
@@ -171,84 +320,136 @@ const togglePlay = (id: number) => {
   object-fit: cover;
 }
 
-.play-status {
+.audio-play-overlay {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 36px;
-  height: 36px;
-  background: rgba(76, 175, 80, 0.9);
+  width: 44px;
+  height: 44px;
+  background: rgba(45, 90, 39, 0.9);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 14px;
 }
 
-.audio-info {
-  flex: 1;
-  min-width: 0;
+.play-btn {
+  color: #fff;
+  font-size: 18px;
 }
 
 .audio-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #333;
-  margin: 0 0 4px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 0 0 6px 0;
 }
 
-.audio-teacher {
-  font-size: 13px;
+.audio-desc {
+  font-size: 12px;
   color: #999;
   margin: 0 0 8px 0;
 }
 
-.audio-progress {
+.audio-tags {
+  margin-bottom: 8px;
+}
+
+.audio-tag {
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 2px;
+}
+
+.tag-red {
+  background: #FDECEC;
+  color: #D93030;
+}
+
+.tag-blue {
+  background: #E8F4FD;
+  color: #3B82F6;
+}
+
+.tag-purple {
+  background: #F3E8FF;
+  color: #8B5CF6;
+}
+
+.tag-green {
+  background: #E8F5E9;
+  color: #22C55E;
+}
+
+.audio-stats {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
-.progress-bar {
-  flex: 1;
-  height: 6px;
-  background: #ddd;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: #4CAF50;
-  border-radius: 3px;
-  transition: width 0.3s;
-}
-
-.progress-time {
+.stat-views,
+.stat-likes {
   font-size: 12px;
   color: #999;
-  flex-shrink: 0;
 }
 
-.audio-duration {
+/* 分页 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+}
+
+.page-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fff;
   font-size: 14px;
-  color: #999;
-  flex-shrink: 0;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.page-btn:hover {
+  border-color: #2d5a27;
+  color: #2d5a27;
+}
+
+.page-btn.active {
+  background: #2d5a27;
+  border-color: #2d5a27;
+  color: #fff;
+}
+
+.page-btn.prev,
+.page-btn.next {
+  width: auto;
+  padding: 0 12px;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .audio-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .banner-title {
+    font-size: 28px;
+  }
 }
 
 @media (max-width: 480px) {
-  .audio-cover {
-    width: 56px;
-    height: 56px;
-  }
-  
-  .audio-title {
-    font-size: 14px;
+  .audio-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -1,12 +1,16 @@
 <template>
   <div class="articles-page">
-    <div class="container">
-      <div class="page-header">
-        <h1 class="page-title">资讯中心</h1>
-        <p class="page-desc">获取最新中医行业动态与学术资讯</p>
+    <!-- 顶部横幅 -->
+    <section class="page-banner">
+      <div class="container">
+        <h1 class="banner-title">资讯中心</h1>
+        <p class="banner-desc">获取最新中医行业动态与学术资讯</p>
       </div>
+    </section>
 
-      <div class="filter-section">
+    <!-- 筛选区域 -->
+    <section class="filter-section">
+      <div class="container">
         <div class="filter-tabs">
           <button 
             v-for="tab in filterTabs" 
@@ -25,64 +29,73 @@
             placeholder="搜索资讯..."
             @keyup.enter="handleSearch"
           />
-          <button class="search-btn" @click="handleSearch">🔍</button>
+          <button class="search-btn" @click="handleSearch">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+          </button>
         </div>
       </div>
+    </section>
 
-      <div class="articles-list">
-        <div 
-          v-for="article in articles" 
-          :key="article.id" 
-          class="article-card"
-          @click="goToDetail(article.id)"
-        >
-          <div class="article-image">
-            <img :src="article.image" :alt="article.title" />
-            <span class="article-tag" :class="article.tagClass">{{ article.tag }}</span>
-          </div>
-          <div class="article-content">
-            <h3 class="article-title">{{ article.title }}</h3>
-            <p class="article-summary">{{ article.summary }}</p>
-            <div class="article-footer">
-              <span class="article-author">{{ article.author }}</span>
-              <span class="article-time">{{ article.time }}</span>
-              <div class="article-stats">
-                <span>👁️ {{ article.views }}</span>
-                <span>❤️ {{ article.likes }}</span>
+    <!-- 资讯列表 -->
+    <section class="articles-section">
+      <div class="container">
+        <div class="articles-list">
+          <div 
+            v-for="article in articles" 
+            :key="article.id" 
+            class="article-card"
+            @click="goToDetail(article.id)"
+          >
+            <div class="article-image">
+              <img :src="article.image" :alt="article.title" />
+            </div>
+            <div class="article-content">
+              <span class="article-tag" :class="article.tagClass">{{ article.tag }}</span>
+              <h3 class="article-title">{{ article.title }}</h3>
+              <p class="article-summary">{{ article.summary }}</p>
+              <div class="article-footer">
+                <span class="article-author">{{ article.author }}</span>
+                <span class="article-time">{{ article.time }}</span>
+                <span class="article-views">👁️ {{ article.views }}</span>
+                <span class="article-comments">💬 {{ article.comments }}</span>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="pagination">
-        <button 
-          class="pagination-btn" 
-          :disabled="currentPage === 1"
-          @click="currentPage--"
-        >
-          ← 上一页
-        </button>
-        <div class="page-numbers">
-          <span 
-            v-for="page in pageNumbers" 
-            :key="page"
-            class="page-number"
-            :class="{ active: currentPage === page }"
-            @click="currentPage = page"
+        <!-- 分页 -->
+        <div class="pagination">
+          <button 
+            class="pagination-btn" 
+            :disabled="currentPage === 1"
+            @click="currentPage--"
           >
-            {{ page }}
-          </span>
+            ← 上一页
+          </button>
+          <div class="page-numbers">
+            <span 
+              v-for="page in pageNumbers" 
+              :key="page"
+              class="page-number"
+              :class="{ active: currentPage === page }"
+              @click="currentPage = page"
+            >
+              {{ page }}
+            </span>
+          </div>
+          <button 
+            class="pagination-btn" 
+            :disabled="currentPage === totalPages"
+            @click="currentPage++"
+          >
+            下一页 →
+          </button>
         </div>
-        <button 
-          class="pagination-btn" 
-          :disabled="currentPage === totalPages"
-          @click="currentPage++"
-        >
-          下一页 →
-        </button>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -116,7 +129,7 @@ const articles = ref([
     author: '中医在线',
     time: '2024-01-15',
     views: 435678,
-    likes: 43
+    comments: 43
   },
   {
     id: 2,
@@ -128,7 +141,7 @@ const articles = ref([
     author: '学术部',
     time: '2024-01-14',
     views: 324567,
-    likes: 38
+    comments: 38
   },
   {
     id: 3,
@@ -140,7 +153,7 @@ const articles = ref([
     author: '教育频道',
     time: '2024-01-13',
     views: 298765,
-    likes: 52
+    comments: 52
   },
   {
     id: 4,
@@ -152,7 +165,7 @@ const articles = ref([
     author: '科研中心',
     time: '2024-01-12',
     views: 567890,
-    likes: 89
+    comments: 89
   },
   {
     id: 5,
@@ -164,7 +177,7 @@ const articles = ref([
     author: '中医在线',
     time: '2024-01-11',
     views: 789012,
-    likes: 120
+    comments: 120
   }
 ])
 
@@ -182,54 +195,61 @@ const handleSearch = () => {
 </script>
 
 <style scoped>
+/* 全局样式 */
 .articles-page {
+  font-family: "Microsoft YaHei", sans-serif;
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px 0;
+  background: #fff;
 }
 
+/* 容器 */
 .container {
-  max-width: 1200px;
+  width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-.page-header {
+/* 顶部横幅 */
+.page-banner {
+  background: linear-gradient(135deg, #2d5a27 0%, #38a169 100%);
+  padding: 60px 0;
   text-align: center;
-  margin-bottom: 40px;
 }
 
-.page-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
+.banner-title {
+  font-size: 36px;
+  color: #fff;
+  margin: 0 0 12px 0;
+  font-weight: 600;
 }
 
-.page-desc {
-  font-size: 14px;
-  color: #999;
+.banner-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
 
+/* 筛选区域 */
 .filter-section {
+  background: #f8fbf8;
+  padding: 20px 0;
+}
+
+.filter-section .container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
-  gap: 16px;
 }
 
 .filter-tabs {
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 
 .filter-tab {
-  padding: 10px 20px;
+  padding: 10px 24px;
   border: none;
-  border-radius: 20px;
+  border-radius: 25px;
   background: #fff;
   color: #666;
   font-size: 14px;
@@ -239,17 +259,17 @@ const handleSearch = () => {
 }
 
 .filter-tab.active {
-  background: #4CAF50;
+  background: #2d5a27;
   color: #fff;
-  border-color: #4CAF50;
+  border-color: #2d5a27;
 }
 
 .search-box {
   display: flex;
   align-items: center;
   background: #fff;
-  border-radius: 24px;
-  padding: 8px 16px;
+  border-radius: 25px;
+  padding: 6px 16px;
   border: 1px solid #e0e0e0;
 }
 
@@ -259,42 +279,52 @@ const handleSearch = () => {
   padding: 8px 12px;
   font-size: 14px;
   width: 200px;
+  background: transparent;
 }
 
 .search-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  color: #666;
   cursor: pointer;
+  padding: 8px;
+}
+
+.search-btn:hover {
+  color: #2d5a27;
+}
+
+/* 资讯列表区域 */
+.articles-section {
+  padding: 50px 0;
 }
 
 .articles-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .article-card {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   background: #fff;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .article-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.15);
+  box-shadow: 0 8px 24px rgba(45, 90, 39, 0.15);
+  transform: translateY(-2px);
 }
 
 .article-image {
   flex-shrink: 0;
-  width: 220px;
-  height: 160px;
-  position: relative;
+  width: 200px;
+  height: 140px;
 }
 
 .article-image img {
@@ -303,14 +333,21 @@ const handleSearch = () => {
   object-fit: cover;
 }
 
+.article-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
 .article-tag {
-  position: absolute;
-  top: 12px;
-  left: 12px;
+  display: inline-block;
+  align-self: flex-start;
   padding: 4px 12px;
   border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
+  margin-bottom: 12px;
 }
 
 .tag-red {
@@ -333,23 +370,12 @@ const handleSearch = () => {
   color: #2E7D32;
 }
 
-.article-content {
-  flex: 1;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-}
-
 .article-title {
   font-size: 18px;
   font-weight: 600;
   color: #333;
-  margin: 0 0 12px 0;
+  margin: 0 0 10px 0;
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .article-summary {
@@ -366,40 +392,33 @@ const handleSearch = () => {
 .article-footer {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
+  font-size: 13px;
+  color: #999;
 }
 
 .article-author {
-  font-size: 13px;
-  color: #999;
+  padding-right: 16px;
+  border-right: 1px solid #eee;
 }
 
 .article-time {
-  font-size: 13px;
-  color: #999;
+  padding-right: 16px;
+  border-right: 1px solid #eee;
 }
 
-.article-stats {
-  margin-left: auto;
-  display: flex;
-  gap: 16px;
-  font-size: 13px;
-  color: #999;
-}
-
+/* 分页 */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 16px;
-  margin-top: 40px;
+  margin-top: 50px;
 }
 
 .pagination-btn {
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   background: #fff;
@@ -410,9 +429,9 @@ const handleSearch = () => {
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: #4CAF50;
+  background: #2d5a27;
   color: #fff;
-  border-color: #4CAF50;
+  border-color: #2d5a27;
 }
 
 .pagination-btn:disabled {
@@ -426,8 +445,8 @@ const handleSearch = () => {
 }
 
 .page-number {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -437,16 +456,31 @@ const handleSearch = () => {
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s;
+  border: 1px solid #e0e0e0;
 }
 
 .page-number.active {
-  background: #4CAF50;
+  background: #2d5a27;
   color: #fff;
+  border-color: #2d5a27;
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+  .container {
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
-  .articles-list {
-    grid-template-columns: 1fr;
+  .filter-section .container {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .filter-tabs {
+    flex-wrap: wrap;
   }
   
   .article-card {
@@ -455,16 +489,11 @@ const handleSearch = () => {
   
   .article-image {
     width: 100%;
-    height: 180px;
+    height: 200px;
   }
   
-  .filter-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .filter-tabs {
-    flex-wrap: wrap;
+  .banner-title {
+    font-size: 28px;
   }
 }
 </style>

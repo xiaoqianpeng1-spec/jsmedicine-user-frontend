@@ -1,36 +1,51 @@
 <template>
   <div class="topics-page">
-    <div class="container">
-      <div class="page-header">
-        <h1 class="page-title">专题中心</h1>
-        <p class="page-desc">精选专题，深入学习中医知识体系</p>
+    <!-- 顶部横幅 -->
+    <section class="page-banner">
+      <div class="container">
+        <h1 class="banner-title">专题中心</h1>
+        <p class="banner-desc">精选专题，深入学习中医知识体系</p>
       </div>
+    </section>
 
-      <div class="topics-grid">
-        <div 
-          v-for="topic in topics" 
-          :key="topic.id" 
-          class="topic-card"
-          @click="goToTopic(topic.id)"
-        >
-          <div class="topic-image">
-            <img :src="topic.image" :alt="topic.title" />
-            <div class="topic-overlay">
-              <span class="topic-count">{{ topic.courseCount }} 节课</span>
+    <!-- 面包屑导航 -->
+    <div class="breadcrumb-section">
+      <div class="container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" @click="goToHome">首页</span>
+          <span class="breadcrumb-separator">></span>
+          <span class="breadcrumb-item active">专题</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 专题列表 -->
+    <section class="topics-section">
+      <div class="container">
+        <div class="topics-grid">
+          <div 
+            v-for="topic in topics" 
+            :key="topic.id" 
+            class="topic-card"
+            @click="goToTopic(topic.path)"
+          >
+            <div class="topic-image">
+              <img :src="topic.image" :alt="topic.title" />
             </div>
-          </div>
-          <div class="topic-info">
-            <span class="topic-category">{{ topic.category }}</span>
-            <h3 class="topic-title">{{ topic.title }}</h3>
-            <p class="topic-desc">{{ topic.desc }}</p>
-            <div class="topic-footer">
-              <span class="topic-students">👥 {{ topic.students }} 人学习</span>
-              <span class="topic-rating">⭐ {{ topic.rating }}</span>
+            <div class="topic-info">
+              <h3 class="topic-title">{{ topic.title }}</h3>
+              <div class="topic-meta">
+                <span class="topic-tag">{{ topic.tag }}</span>
+                <div class="topic-stats">
+                  <span class="stat-views">👁️ {{ topic.views }}</span>
+                  <span class="stat-likes">⭐ {{ topic.likes }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -43,202 +58,208 @@ const router = useRouter()
 const topics = ref([
   {
     id: 1,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20traditional%20medicine%20herbs%20green%20theme&image_size=landscape_4_3',
-    title: '中医基础理论精讲',
-    desc: '系统学习中医基础理论，掌握阴阳五行、气血津液等核心概念',
-    category: '基础入门',
-    courseCount: 24,
-    students: 12580,
-    rating: 4.9
+    path: '/topics/1',
+    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20training%20banner%20traditional%20style%20with%20doctors&image_size=landscape_16_9',
+    title: '基层卫生技术人员中医知识与技能培训',
+    tag: '中医培训',
+    views: 435678,
+    likes: 43
   },
   {
     id: 2,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20acupuncture%20traditional%20medicine&image_size=landscape_4_3',
-    title: '针灸技法与临床应用',
-    desc: '深入学习针灸理论与实操技巧，提升临床诊疗能力',
-    category: '技能提升',
-    courseCount: 32,
-    students: 8960,
-    rating: 4.8
+    path: '/topics/covid',
+    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20covid%20prevention%20banner%20mountain%20ink%20style&image_size=landscape_16_9',
+    title: '新冠肺炎疫情中医药防控专题培训',
+    tag: '新冠肺炎',
+    views: 435678,
+    likes: 43
   },
   {
     id: 3,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20herbal%20medicine%20preparation&image_size=landscape_4_3',
-    title: '中药方剂学专题',
-    desc: '掌握经典方剂配伍规律，提升方剂应用水平',
-    category: '专业进阶',
-    courseCount: 48,
-    students: 6540,
-    rating: 4.9
+    path: '/topics/covid',
+    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20covid%20prevention%20banner%20mountain%20ink%20style&image_size=landscape_16_9',
+    title: '新冠肺炎疫情中医药防控专题培训',
+    tag: '新冠肺炎',
+    views: 435678,
+    likes: 43
   },
   {
     id: 4,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20diagnosis%20pulse%20diagnosis&image_size=landscape_4_3',
-    title: '中医诊断学精要',
-    desc: '系统学习望闻问切四诊方法，提高辨证论治能力',
-    category: '核心课程',
-    courseCount: 36,
-    students: 10320,
-    rating: 4.8
-  },
-  {
-    id: 5,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20gynecology%20healthcare&image_size=landscape_4_3',
-    title: '中医妇科疾病诊治',
-    desc: '深入学习妇科常见病的中医诊疗方法与调理方案',
-    category: '专科领域',
-    courseCount: 28,
-    students: 7890,
-    rating: 4.7
-  },
-  {
-    id: 6,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20pediatrics%20traditional&image_size=landscape_4_3',
-    title: '中医儿科特色疗法',
-    desc: '掌握小儿常见病的中医治疗与保健方法',
-    category: '专科领域',
-    courseCount: 22,
-    students: 5670,
-    rating: 4.8
+    path: '/topics/1',
+    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20training%20banner%20traditional%20style%20with%20doctors&image_size=landscape_16_9',
+    title: '基层卫生技术人员中医知识与技能培训',
+    tag: '中医培训',
+    views: 435678,
+    likes: 43
   }
 ])
 
-const goToTopic = (id: number) => {
-  router.push(`/topics/${id}`)
+const goToHome = () => {
+  router.push('/')
+}
+
+const goToTopic = (path: string) => {
+  router.push(path)
 }
 </script>
 
 <style scoped>
 .topics-page {
+  font-family: "Microsoft YaHei", sans-serif;
   min-height: 100vh;
-  background: #f5f5f5;
-  padding: 20px 0;
+  background: #fff;
 }
 
 .container {
-  max-width: 1200px;
+  width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-.page-header {
+/* 顶部横幅 */
+.page-banner {
+  background: linear-gradient(135deg, #2d5a27 0%, #38a169 100%);
+  padding: 60px 0;
   text-align: center;
-  margin-bottom: 40px;
 }
 
-.page-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
+.banner-title {
+  font-size: 36px;
+  color: #fff;
+  margin: 0 0 12px 0;
+  font-weight: 600;
 }
 
-.page-desc {
-  font-size: 14px;
-  color: #999;
+.banner-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
+}
+
+/* 面包屑导航 */
+.breadcrumb-section {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.breadcrumb-item:hover {
+  color: #2d5a27;
+}
+
+.breadcrumb-item.active {
+  color: #999;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: #ccc;
+}
+
+/* 专题列表区域 */
+.topics-section {
+  padding: 30px 0 50px;
 }
 
 .topics-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
 }
 
 .topic-card {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
 }
 
 .topic-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .topic-image {
   position: relative;
-  height: 180px;
+  height: 200px;
+  overflow: hidden;
 }
 
 .topic-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s;
 }
 
-.topic-overlay {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 6px 12px;
-  border-radius: 20px;
-}
-
-.topic-count {
-  color: #fff;
-  font-size: 12px;
-  font-weight: 500;
+.topic-card:hover .topic-image img {
+  transform: scale(1.05);
 }
 
 .topic-info {
-  padding: 20px;
-}
-
-.topic-category {
-  display: inline-block;
-  padding: 4px 12px;
-  background: #E8F5E9;
-  color: #4CAF50;
-  font-size: 12px;
-  border-radius: 4px;
-  margin-bottom: 12px;
+  padding: 16px 20px;
 }
 
 .topic-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #333;
-  margin: 0 0 8px 0;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
 }
 
-.topic-desc {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.6;
-  margin: 0 0 16px 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.topic-footer {
+.topic-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.topic-students,
-.topic-rating {
+.topic-tag {
+  padding: 4px 12px;
+  background: #E8F5E9;
+  color: #2d5a27;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.topic-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-views,
+.stat-likes {
   font-size: 13px;
   color: #999;
 }
 
-@media (max-width: 768px) {
-  .topics-grid {
-    grid-template-columns: repeat(2, 1fr);
+@media (max-width: 1200px) {
+  .container {
+    width: 100%;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .topics-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .banner-title {
+    font-size: 28px;
   }
 }
 </style>
