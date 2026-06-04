@@ -76,7 +76,7 @@ function createHead(options = {}) {
 
 const NUXT_RUNTIME_PAYLOAD_EXTRACTION = false;
 
-const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"中医在线平台 - 传承中医智慧，守护健康生活"}],"link":[{"rel":"icon","type":"image/svg+xml","href":"/favicon.ico"}],"style":[],"script":[],"noscript":[],"title":"中医在线"};
+const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"中医在线平台"}],"link":[{"rel":"icon","href":"/favicon.ico"}],"style":[],"script":[],"noscript":[],"title":"中医在线"};
 
 const appRootTag = "div";
 
@@ -508,5 +508,5 @@ const renderer = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   default: handler
 }, Symbol.toStringTag, { value: 'Module' }));
 
-export { baseURL as b, headSymbol as h, renderer as r, useHead as u };
+export { baseURL as b, headSymbol as h, publicAssetsURL as p, renderer as r, useHead as u };
 //# sourceMappingURL=renderer.mjs.map

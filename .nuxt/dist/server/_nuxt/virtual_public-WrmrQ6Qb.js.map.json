@@ -1,0 +1,1 @@
+{"file":"virtual_public-WrmrQ6Qb.js","mappings":";AAAuD,MAAA,aAAe,gBAAgB,WAAW;","names":[],"sources":["../../../../virtual:public?%2Ficon.png"],"sourcesContent":["import { publicAssetsURL } from '#internal/nuxt/paths';export default publicAssetsURL(\"/icon.png\")"],"version":3}

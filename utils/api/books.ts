@@ -29,7 +29,6 @@ export interface AppBookResponse {
   progressPercent: number
   studySeconds: number
   chapters: AppBookChapterResponse[]
-  isHot?: boolean
 }
 
 export interface ApiResponseAppBookResponse {

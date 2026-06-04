@@ -1,0 +1,4 @@
+import style_0 from "./index-styles-1.mjs-B70ZN4-g.js";
+export default [
+  style_0
+]

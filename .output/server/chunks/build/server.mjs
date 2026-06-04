@@ -1,7 +1,7 @@
-import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import { hasInjectionContext, getCurrentInstance, inject, ref, reactive, effectScope, isRef, isReactive, toRaw, getCurrentScope, onScopeDispose, watch, nextTick, toRefs, markRaw, computed, defineComponent, createElementBlock, shallowRef, provide, cloneVNode, h, Suspense, Fragment, useSSRContext, createApp, shallowReactive, onErrorCaptured, onServerPrefetch, unref, createVNode, resolveDynamicComponent, defineAsyncComponent, mergeProps, toRef, isReadonly, isShallow } from 'vue';
-import { x as parseURL, h as encodePath, d as decodePath, q as hasProtocol, s as isScriptProtocol, u as joinURL, F as withQuery, y as sanitizeStatusCode, j as getContext, $ as $fetch, v as klona, a as createHooks, c as createError$1, m as getRequestHeader, g as destr, r as isEqual, z as setCookie, k as getCookie, f as deleteCookie, i as executeAsync, e as defu } from '../_/nitro.mjs';
+import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import { toRaw, computed, isRef, isReactive, toRef, hasInjectionContext, getCurrentInstance, inject, ref, reactive, effectScope, getCurrentScope, onScopeDispose, watch, nextTick, toRefs, markRaw, defineComponent, createElementBlock, shallowRef, provide, cloneVNode, h, defineAsyncComponent, unref, shallowReactive, Suspense, Fragment, useSSRContext, createApp, withCtx, createVNode, onErrorCaptured, onServerPrefetch, resolveDynamicComponent, mergeProps, isReadonly, isShallow } from 'vue';
+import { x as parseURL, h as encodePath, d as decodePath, q as hasProtocol, s as isScriptProtocol, u as joinURL, F as withQuery, y as sanitizeStatusCode, j as getContext, $ as $fetch, e as defu, v as klona, a as createHooks, c as createError$1, m as getRequestHeader, g as destr, r as isEqual, z as setCookie, k as getCookie, f as deleteCookie, i as executeAsync } from '../_/nitro.mjs';
 import { b as baseURL } from '../routes/renderer.mjs';
-import { RouterView, createMemoryHistory, createRouter, START_LOCATION } from 'vue-router';
+import { useRoute as useRoute$1, RouterView, createMemoryHistory, createRouter, START_LOCATION } from 'vue-router';
 import { ssrRenderComponent, ssrRenderSuspense, ssrRenderVNode } from 'vue/server-renderer';
 import 'node:http';
 import 'node:https';
@@ -78,6 +78,7 @@ if (!globalThis.$fetch) {
 if (!("global" in globalThis)) {
   globalThis.global = globalThis;
 }
+const appLayoutTransition = false;
 const nuxtLinkDefaults = { "componentName": "NuxtLink" };
 const appId = "nuxt-app";
 function getNuxtAppCtx(id = appId) {
@@ -464,75 +465,149 @@ const unhead_k2P3m_ZDyjlr2mMYnoDPwavjsDN8hBlk9cFai0bbopU = /* @__PURE__ */ defin
     nuxtApp.vueApp.use(head);
   }
 });
-function toArray(value) {
+function toArray$1(value) {
   return Array.isArray(value) ? value : [value];
 }
 const matcher = (m, p) => {
   return [];
 };
 const _routeRulesMatcher = (path) => defu({}, ...matcher().map((r) => r.data).reverse());
-const routeRulesMatcher = _routeRulesMatcher;
+const routeRulesMatcher$1 = _routeRulesMatcher;
 function getRouteRules(arg) {
   const path = typeof arg === "string" ? arg : arg.path;
   try {
-    return routeRulesMatcher(path);
+    return routeRulesMatcher$1(path);
   } catch (e) {
     console.error("[nuxt] Error matching route rules.", e);
     return {};
   }
 }
+const __nuxt_page_meta = {
+  ssr: false,
+  layout: false
+};
 const _routes = [
+  {
+    name: "home",
+    path: "/home",
+    component: () => import('./home-DSz7C_YL.mjs')
+  },
   {
     name: "index",
     path: "/",
-    component: () => import('./index-Cgp9t0OO.mjs')
-  },
-  {
-    name: "login",
-    path: "/login",
-    component: () => import('./login-u3PMK5m4.mjs')
+    meta: __nuxt_page_meta || {},
+    component: () => import('./index-DGLcF7y7.mjs')
   },
   {
     name: "profile",
     path: "/profile",
-    component: () => import('./profile-Qaq6x85V.mjs')
+    component: () => import('./profile-Dem8i3CR.mjs')
+  },
+  {
+    name: "exam-id",
+    path: "/exam/:id()",
+    component: () => import('./_id_-BqNhPFqp.mjs')
+  },
+  {
+    name: "audio-id",
+    path: "/audio/:id()",
+    component: () => import('./_id_-CSP6N9F-.mjs')
+  },
+  {
+    name: "books-id",
+    path: "/books/:id()",
+    component: () => import('./_id_-B8Sgaiwj.mjs'),
+    children: [
+      {
+        name: "books-id-chapter-chapterId",
+        path: "chapter/:chapterId()",
+        component: () => import('./_chapterId_-C5v8YAXB.mjs')
+      }
+    ]
   },
   {
     name: "exam",
     path: "/exam",
-    component: () => import('./index-D628xTKR.mjs')
+    component: () => import('./index-lvjEw3Ex.mjs')
+  },
+  {
+    name: "video-id",
+    path: "/video/:id()",
+    component: () => import('./_id_-BckC2YEM.mjs')
   },
   {
     name: "audio",
     path: "/audio",
-    component: () => import('./index-Bg-ZV1AT.mjs')
+    component: () => import('./index-BENP0XAB.mjs')
   },
   {
     name: "books",
     path: "/books",
-    component: () => import('./index-CVIY3X_7.mjs')
+    component: () => import('./index-BBpKEgAA.mjs')
+  },
+  {
+    name: "topics-id",
+    path: "/topics/:id()",
+    component: () => import('./_id_-C0nN3J54.mjs')
   },
   {
     name: "video",
     path: "/video",
-    component: () => import('./index-DfsSWAOf.mjs')
+    component: () => import('./index-D3XKEwHO.mjs')
+  },
+  {
+    name: "consult-id",
+    path: "/consult/:id()",
+    component: () => import('./_id_-CK1wGLuh.mjs'),
+    children: [
+      {
+        name: "consult-id-qa-qaId",
+        path: "qa/:qaId()",
+        component: () => import('./_qaId_-qhSQ7KAT.mjs')
+      }
+    ]
+  },
+  {
+    name: "exam-records",
+    path: "/exam/records",
+    component: () => import('./records-08WkVfSl.mjs'),
+    children: [
+      {
+        name: "exam-records-id",
+        path: ":id()",
+        component: () => import('./_id_-FqCT4xZi.mjs')
+      }
+    ]
+  },
+  {
+    name: "topics-covid",
+    path: "/topics/covid",
+    component: () => import('./covid-DzdhvV9R.mjs')
   },
   {
     name: "topics",
     path: "/topics",
-    component: () => import('./index-DDuXi0ID.mjs')
+    component: () => import('./index-DrYzkSUR.mjs')
   },
   {
     name: "consult",
     path: "/consult",
-    component: () => import('./index-BpjxhnF5.mjs')
+    component: () => import('./index-Biys44MR.mjs')
   },
   {
     name: "articles",
     path: "/articles",
-    component: () => import('./index-D6XEd71C.mjs')
+    component: () => import('./index-BeJUwZTl.mjs')
+  },
+  {
+    name: "articles-detail-id",
+    path: "/articles/detail/:id()",
+    component: () => import('./_id_-CMpjiNDF.mjs')
   }
 ];
+const _wrapInTransition = (props, children) => {
+  return { default: () => children.default?.() };
+};
 const ROUTE_KEY_PARENTHESES_RE = /(:\w+)\([^)]+\)/g;
 const ROUTE_KEY_SYMBOLS_RE = /(:\w+)[?+*]/g;
 const ROUTE_KEY_NORMAL_RE = /:\w+/g;
@@ -554,6 +629,23 @@ function isChangingPage(to, from) {
     return false;
   }
   return true;
+}
+function toArray(value) {
+  return Array.isArray(value) ? value : [value];
+}
+function _mergeTransitionProps(routeProps) {
+  const _props = [];
+  for (const prop of routeProps) {
+    if (!prop) {
+      continue;
+    }
+    _props.push({
+      ...prop,
+      onAfterLeave: prop.onAfterLeave ? toArray(prop.onAfterLeave) : void 0,
+      onBeforeLeave: prop.onBeforeLeave ? toArray(prop.onBeforeLeave) : void 0
+    });
+  }
+  return defu(..._props);
 }
 const routerOptions0 = {
   scrollBehavior(to, from, savedPosition) {
@@ -771,7 +863,7 @@ const plugin$1 = /* @__PURE__ */ defineNuxtPlugin({
           if (!componentMiddleware) {
             continue;
           }
-          for (const entry2 of toArray(componentMiddleware)) {
+          for (const entry2 of toArray$1(componentMiddleware)) {
             middlewareEntries.add(entry2);
           }
         }
@@ -1237,6 +1329,28 @@ function defineStore(idOrOptions, setup, setupOptions) {
   useStore.$id = id;
   return useStore;
 }
+function storeToRefs(store) {
+  {
+    const rawStore = toRaw(store);
+    const refs = {};
+    for (const key in rawStore) {
+      const value = rawStore[key];
+      if (value.effect) {
+        refs[key] = // ...
+        computed({
+          get: () => store[key],
+          set(value2) {
+            store[key] = value2;
+          }
+        });
+      } else if (isRef(value) || isReactive(value)) {
+        refs[key] = // ---
+        toRef(store, key);
+      }
+    }
+    return refs;
+  }
+}
 defineComponent({
   name: "ServerPlaceholder",
   render() {
@@ -1368,6 +1482,161 @@ const plugins = [
   plugin,
   components_plugin_z4hgvsiddfKkfXTP6M8M4zG5Cb7sGnDhcryKVM45Di4
 ];
+const layouts = {
+  default: defineAsyncComponent(() => import('./default-AA8FgiVH.mjs').then((m) => m.default || m))
+};
+const routeRulesMatcher = _routeRulesMatcher;
+const LayoutLoader = defineComponent({
+  name: "LayoutLoader",
+  inheritAttrs: false,
+  props: {
+    name: String,
+    layoutProps: Object
+  },
+  setup(props, context) {
+    return () => h(layouts[props.name], props.layoutProps, context.slots);
+  }
+});
+const nuxtLayoutProps = {
+  name: {
+    type: [String, Boolean, Object],
+    default: null
+  },
+  fallback: {
+    type: [String, Object],
+    default: null
+  }
+};
+const __nuxt_component_0 = defineComponent({
+  name: "NuxtLayout",
+  inheritAttrs: false,
+  props: nuxtLayoutProps,
+  setup(props, context) {
+    const nuxtApp = useNuxtApp();
+    const injectedRoute = inject(PageRouteSymbol);
+    const shouldUseEagerRoute = !injectedRoute || injectedRoute === useRoute();
+    const route = shouldUseEagerRoute ? useRoute$1() : injectedRoute;
+    const layout = computed(() => {
+      let layout2 = unref(props.name) ?? route?.meta.layout ?? routeRulesMatcher(route?.path).appLayout ?? "default";
+      if (layout2 && !(layout2 in layouts)) {
+        if (props.fallback) {
+          layout2 = unref(props.fallback);
+        }
+      }
+      return layout2;
+    });
+    const layoutRef = shallowRef();
+    context.expose({ layoutRef });
+    const done = nuxtApp.deferHydration();
+    let lastLayout;
+    return () => {
+      const hasLayout = !!layout.value && layout.value in layouts;
+      const hasTransition = hasLayout && !!(route?.meta.layoutTransition ?? appLayoutTransition);
+      const transitionProps = hasTransition && _mergeTransitionProps([
+        route?.meta.layoutTransition,
+        appLayoutTransition,
+        {
+          onBeforeLeave() {
+            nuxtApp["~transitionPromise"] = new Promise((resolve) => {
+              nuxtApp["~transitionFinish"] = resolve;
+            });
+          },
+          onAfterLeave() {
+            nuxtApp["~transitionFinish"]?.();
+            delete nuxtApp["~transitionFinish"];
+            delete nuxtApp["~transitionPromise"];
+          }
+        }
+      ]);
+      const previouslyRenderedLayout = lastLayout;
+      lastLayout = layout.value;
+      return _wrapInTransition(transitionProps, {
+        default: () => h(
+          Suspense,
+          {
+            suspensible: true,
+            onResolve: async () => {
+              await nextTick(done);
+            }
+          },
+          {
+            default: () => h(
+              LayoutProvider,
+              {
+                layoutProps: mergeProps(context.attrs, route.meta.layoutProps ?? {}, { ref: layoutRef }),
+                key: layout.value || void 0,
+                name: layout.value,
+                shouldProvide: !props.name,
+                isRenderingNewLayout: (name) => {
+                  return name !== previouslyRenderedLayout && name === layout.value;
+                },
+                hasTransition
+              },
+              context.slots
+            )
+          }
+        )
+      }).default();
+    };
+  }
+});
+const LayoutProvider = defineComponent({
+  name: "NuxtLayoutProvider",
+  inheritAttrs: false,
+  props: {
+    name: {
+      type: [String, Boolean]
+    },
+    layoutProps: {
+      type: Object
+    },
+    hasTransition: {
+      type: Boolean
+    },
+    shouldProvide: {
+      type: Boolean
+    },
+    isRenderingNewLayout: {
+      type: Function,
+      required: true
+    }
+  },
+  setup(props, context) {
+    const name = props.name;
+    if (props.shouldProvide) {
+      provide(LayoutMetaSymbol, {
+        // When name=false, always return true so NuxtPage doesn't skip rendering
+        isCurrent: (route) => name === false || name === (route.meta.layout ?? routeRulesMatcher(route.path).appLayout ?? "default")
+      });
+    }
+    const injectedRoute = inject(PageRouteSymbol);
+    const isNotWithinNuxtPage = injectedRoute && injectedRoute === useRoute();
+    if (isNotWithinNuxtPage) {
+      const vueRouterRoute = useRoute$1();
+      const reactiveChildRoute = {};
+      for (const _key in vueRouterRoute) {
+        const key = _key;
+        Object.defineProperty(reactiveChildRoute, key, {
+          enumerable: true,
+          get: () => {
+            return props.isRenderingNewLayout(props.name) ? vueRouterRoute[key] : injectedRoute[key];
+          }
+        });
+      }
+      provide(PageRouteSymbol, shallowReactive(reactiveChildRoute));
+    }
+    return () => {
+      if (!name || typeof name === "string" && !(name in layouts)) {
+        return context.slots.default?.();
+      }
+      return h(
+        LayoutLoader,
+        { key: name, layoutProps: props.layoutProps, name },
+        context.slots
+      );
+    };
+  }
+});
 const defineRouteProvider = (name = "RouteProvider") => defineComponent({
   name,
   props: {
@@ -1400,7 +1669,7 @@ const defineRouteProvider = (name = "RouteProvider") => defineComponent({
   }
 });
 const RouteProvider = defineRouteProvider();
-const __nuxt_component_0 = defineComponent({
+const __nuxt_component_1 = defineComponent({
   name: "NuxtPage",
   inheritAttrs: false,
   props: {
@@ -1453,7 +1722,8 @@ function normalizeSlot(slot, data) {
 }
 async function useApi(url, options = {}) {
   const userStore = useUserStore();
-  const baseUrl = "http://127.0.0.1:18081";
+  const config = /* @__PURE__ */ useRuntimeConfig();
+  const baseUrl = config.public.apiBase || "";
   const headers = {
     "Content-Type": "application/json",
     ...options.headers
@@ -1461,16 +1731,20 @@ async function useApi(url, options = {}) {
   if (userStore.token && !headers.Authorization) {
     headers.Authorization = `Bearer ${userStore.token}`;
   }
-  const config = {
+  const requestConfig = {
     ...options,
     headers,
     body: options.body ? JSON.stringify(options.body) : void 0
   };
   try {
-    const response = await fetch(`${baseUrl}${url}`, config);
+    const fullUrl = baseUrl ? `${baseUrl}${url}` : url;
+    console.log("[API Request]", fullUrl, requestConfig);
+    const response = await fetch(fullUrl, requestConfig);
+    console.log("[API Response Status]", response.status, response.statusText);
     const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.message || "请求失败");
+    console.log("[API Response Data]", data);
+    if (!response.ok) {
+      throw new Error(data.message || `请求失败 (${response.status})`);
     }
     return data;
   } catch (error) {
@@ -1520,13 +1794,89 @@ const authApi = {
     });
   },
   async getCurrentUser(token) {
-    return useApi("/api/v1/app/auth/me", {
+    return useApi("/api/v1/app/profile", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  async updateUserInfo(token, userData) {
+    return useApi("/api/v1/app/profile", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: userData
+    });
+  },
+  async uploadAvatar(token, formData) {
+    return useApi("/api/v1/app/profile/upload/avatar", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data"
+      },
+      body: formData
+    });
+  },
+  async checkAvatar(token, fileName, fileSize, fileMd5) {
+    return useApi("/api/v1/app/profile/check/certificate", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: { fileName, fileSize, fileMd5 }
+    });
+  },
+  async getCertificateList(token) {
+    return useApi("/api/v1/app/profile/certificate/list", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  async submitCertificate(token, certificateData) {
+    return useApi("/api/v1/app/profile/certificate/submit", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: certificateData
+    });
+  },
+  async getCertificateDetail(token, certificateId) {
+    return useApi(`/api/v1/app/profile/certificate/detail/${certificateId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  async applyCertificate(token, certificateData) {
+    return useApi("/api/v1/app/profile/certificate", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: certificateData
+    });
+  },
+  async getProfileSummary(token) {
+    return useApi("/api/v1/app/profile/summary", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
   }
+};
+const loadFromStorage = () => {
+  return {};
+};
+const saveToStorage = (data) => {
+  return;
 };
 const useUserStore = /* @__PURE__ */ defineStore("user", () => {
   const token = ref("");
@@ -1545,12 +1895,34 @@ const useUserStore = /* @__PURE__ */ defineStore("user", () => {
     company: ""
   });
   const tokenCookie = useCookie("token", { maxAge: 86400 });
+  const initFromStorage = () => {
+    const saved = loadFromStorage();
+    if (saved && Object.keys(saved).length > 0) {
+      userInfo.value = { ...userInfo.value, ...saved };
+    }
+  };
+  const mapUserFields = (data) => {
+    return {
+      id: data.id || data.userId || "",
+      username: data.username || data.userName || data.loginName || "",
+      nickname: data.nickname || data.nickName || data.name || "",
+      mobile: data.mobile || data.phone || data.tel || "",
+      avatar: data.avatar || data.avatarUrl || data.avatar_url || "",
+      role: data.role || data.roleName || "",
+      motto: data.motto || data.signature || "",
+      gender: data.gender || "",
+      education: data.education || data.edu || "",
+      city: data.city || "",
+      company: data.company || data.orgName || ""
+    };
+  };
   const login = async (newToken, userData) => {
     token.value = newToken;
     isLoggedIn.value = true;
     tokenCookie.value = newToken;
     if (userData) {
-      updateUserInfo(userData);
+      const mappedData = mapUserFields(userData);
+      updateUserInfo(mappedData);
     }
   };
   const logout = async () => {
@@ -1581,6 +1953,7 @@ const useUserStore = /* @__PURE__ */ defineStore("user", () => {
       ...userInfo.value,
       ...info
     };
+    saveToStorage(userInfo.value);
   };
   const loadFromCookie = () => {
     const savedToken = tokenCookie.value;
@@ -1594,7 +1967,8 @@ const useUserStore = /* @__PURE__ */ defineStore("user", () => {
     try {
       const response = await authApi.getCurrentUser(token.value);
       if (response.data) {
-        updateUserInfo(response.data);
+        const mappedData = mapUserFields(response.data);
+        updateUserInfo(mappedData);
       }
     } catch (err) {
       console.error("Failed to fetch user info:", err);
@@ -1608,7 +1982,8 @@ const useUserStore = /* @__PURE__ */ defineStore("user", () => {
     logout,
     updateUserInfo,
     loadFromCookie,
-    fetchUserInfo
+    fetchUserInfo,
+    initFromStorage
   };
 });
 const _sfc_main$2 = /* @__PURE__ */ defineComponent({
@@ -1617,9 +1992,22 @@ const _sfc_main$2 = /* @__PURE__ */ defineComponent({
   setup(__props) {
     const userStore = useUserStore();
     userStore.loadFromCookie();
+    userStore.initFromStorage();
     return (_ctx, _push, _parent, _attrs) => {
-      const _component_NuxtPage = __nuxt_component_0;
-      _push(ssrRenderComponent(_component_NuxtPage, _attrs, null, _parent));
+      const _component_NuxtLayout = __nuxt_component_0;
+      const _component_NuxtPage = __nuxt_component_1;
+      _push(ssrRenderComponent(_component_NuxtLayout, _attrs, {
+        default: withCtx((_, _push2, _parent2, _scopeId) => {
+          if (_push2) {
+            _push2(ssrRenderComponent(_component_NuxtPage, null, null, _parent2, _scopeId));
+          } else {
+            return [
+              createVNode(_component_NuxtPage)
+            ];
+          }
+        }),
+        _: 1
+      }, _parent));
     };
   }
 });
@@ -1643,8 +2031,8 @@ const _sfc_main$1 = {
     const statusText = _error.statusMessage ?? (is404 ? "Page Not Found" : "Internal Server Error");
     const description = _error.message || _error.toString();
     const stack = void 0;
-    const _Error404 = defineAsyncComponent(() => import('./error-404-WS8lRDUk.mjs'));
-    const _Error = defineAsyncComponent(() => import('./error-500-BKBq0GAb.mjs'));
+    const _Error404 = defineAsyncComponent(() => import('./error-404-DvP-hXi_.mjs'));
+    const _Error = defineAsyncComponent(() => import('./error-500-Dr5wonSt.mjs'));
     const ErrorTemplate = is404 ? _Error404 : _Error;
     return (_ctx, _push, _parent, _attrs) => {
       _push(ssrRenderComponent(unref(ErrorTemplate), mergeProps({ status: unref(status), statusText: unref(statusText), statusCode: unref(status), statusMessage: unref(statusText), description: unref(description), stack: unref(stack) }, _attrs), null, _parent));
@@ -1736,5 +2124,5 @@ let entry;
 }
 const entry_default = ((ssrContext) => entry(ssrContext));
 
-export { nuxtLinkDefaults as a, useRouter as b, useRuntimeConfig as c, useUserStore as d, entry_default as default, encodeRoutePath as e, navigateTo as n, resolveRouteObject as r, tryUseNuxtApp as t, useNuxtApp as u };
+export { nuxtLinkDefaults as a, useRouter as b, useRuntimeConfig as c, useUserStore as d, entry_default as default, encodeRoutePath as e, navigateTo as n, resolveRouteObject as r, storeToRefs as s, tryUseNuxtApp as t, useNuxtApp as u };
 //# sourceMappingURL=server.mjs.map

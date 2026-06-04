@@ -55,7 +55,6 @@
           >
             <div class="book-cover">
               <img :src="book.coverUrl" :alt="book.bookName" />
-              <div class="book-badge" v-if="book.isHot">热门</div>
             </div>
             <div class="book-info">
               <h3 class="book-title">{{ book.bookName }}</h3>
