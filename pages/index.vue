@@ -1,365 +1,592 @@
 <template>
-  <div class="home-page">
-    <!-- Banner -->
-    <el-row class="home-banner">
-      <el-col :xs="24" :md="12">
-        <div class="banner-content">
-          <h1 class="banner-title">中医在线咨询</h1>
-          <p class="banner-subtitle">专业名师在线</p>
-          <el-button type="primary" size="large" @click="navigateTo('/consult')">立即咨询</el-button>
-        </div>
-      </el-col>
-      <el-col :xs="0" :md="12">
-        <div class="banner-illustration">
-          <div class="illustration-placeholder">
-            <span>医疗插画</span>
+  <div class="login-page">
+    <div class="background-decoration">
+      <div class="decor-circle circle-1"></div>
+      <div class="decor-circle circle-2"></div>
+      <div class="decor-circle circle-3"></div>
+      <div class="decor-circle circle-4"></div>
+      <div class="decor-wave wave-1"></div>
+      <div class="decor-wave wave-2"></div>
+      <div class="decor-wave wave-3"></div>
+      <div class="decor-wave wave-4"></div>
+    </div>
+
+    <div class="login-wrapper">
+      <div class="left-section">
+        <img src="/login-page.png" alt="中医医师" class="login-illustration" />
+      </div>
+
+      <div class="right-section">
+        <div class="login-box">
+          <div class="logo-section">
+            <img src="/icon.png" alt="中医在线" class="logo-image" />
+            <h1 class="title">中医在线</h1>
+          </div>
+
+          <div class="login-tabs">
+            <button
+              class="tab-btn"
+              :class="{ active: loginType === 'phone' }"
+              @click="loginType = 'phone'"
+            >
+              手机号登录
+            </button>
+            <span class="tab-divider">|</span>
+            <button
+              class="tab-btn"
+              :class="{ active: loginType === 'password' }"
+              @click="loginType = 'password'"
+            >
+              账号密码登录
+            </button>
+            <span class="tab-divider">|</span>
+            <button
+              class="tab-btn"
+              :class="{ active: loginType === 'qrcode' }"
+              @click="loginType = 'qrcode'"
+            >
+              二维码登录
+            </button>
+          </div>
+
+          <!-- 手机号验证码登录 -->
+          <div v-if="loginType === 'phone'" class="login-form">
+            <div class="form-group">
+              <div class="input-wrapper">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <input
+                  v-model="form.mobile"
+                  type="tel"
+                  class="form-input"
+                  placeholder="请输入手机号"
+                  maxlength="11"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="input-wrapper">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <input
+                  v-model="form.code"
+                  type="text"
+                  class="form-input"
+                  placeholder="请输入验证码"
+                  maxlength="6"
+                />
+                <button
+                  type="button"
+                  class="sms-btn"
+                  :disabled="smsDisabled"
+                  @click="sendSms"
+                >
+                  {{ smsText }}
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="login-btn" :disabled="loading" @click="handleSmsLogin">
+              <span v-if="loading">登录中...</span>
+              <span v-else>登录</span>
+            </button>
+          </div>
+
+          <!-- 账号密码登录 -->
+          <div v-else-if="loginType === 'password'" class="login-form">
+            <div class="form-group">
+              <div class="input-wrapper">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <input
+                  v-model="form.username"
+                  type="text"
+                  class="form-input"
+                  placeholder="请输入用户名/手机号"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="input-wrapper">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input
+                  v-model="form.password"
+                  type="password"
+                  class="form-input"
+                  placeholder="请输入密码"
+                />
+              </div>
+            </div>
+
+            <button type="button" class="login-btn" :disabled="loading" @click="handlePasswordLogin">
+              <span v-if="loading">登录中...</span>
+              <span v-else>登录</span>
+            </button>
+          </div>
+
+          <!-- 二维码登录 -->
+          <div v-else class="qrcode-section">
+            <div class="qrcode-wrapper">
+              <img src="https://neeko-copilot.bytedance.net/api/text_to_image?prompt=QR%20code%20simple%20black%20and%20white%20clean%20background&image_size=square" alt="登录二维码" />
+            </div>
           </div>
         </div>
-      </el-col>
-    </el-row>
-
-    <!-- Platform Intro -->
-    <el-row class="platform-intro">
-      <el-col :span="24">
-        <h2 class="platform-title">知识服务云平台</h2>
-        <p class="platform-desc">精准、及时、交互式、全天候、全程陪伴式</p>
-      </el-col>
-      <el-col :span="24">
-        <el-row :gutter="20" justify="center">
-          <el-col :xs="12" :sm="8" :md="4">
-            <div class="stat-item">
-              <div class="stat-icon">👥</div>
-              <div class="stat-info">
-                <strong>20000+</strong>
-                <span>用户在线学习</span>
-              </div>
-            </div>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="4">
-            <div class="stat-item">
-              <div class="stat-icon">🏥</div>
-              <div class="stat-info">
-                <strong>3000+</strong>
-                <span>各级医院免费培训</span>
-              </div>
-            </div>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="4">
-            <div class="stat-item">
-              <div class="stat-icon">📚</div>
-              <div class="stat-info">
-                <strong>数百本</strong>
-                <span>专业中医书籍配套视频</span>
-              </div>
-            </div>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="4">
-            <div class="stat-item">
-              <div class="stat-icon">📝</div>
-              <div class="stat-info">
-                <strong>5000+</strong>
-                <span>题库测试学习</span>
-              </div>
-            </div>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="4">
-            <div class="stat-item">
-              <div class="stat-icon">👨🏫</div>
-              <div class="stat-info">
-                <strong>上百位</strong>
-                <span>专家在线答疑</span>
-              </div>
-            </div>
-          </el-col>
-        </el-row>
-      </el-col>
-    </el-row>
-
-    <!-- Features -->
-    <el-row class="features-section">
-      <el-col :span="24">
-        <h2 class="section-heading">基础功能</h2>
-        <p class="section-desc">资讯预览、在线学习、在线测评、专家答疑、知识库、专题整合、个人中心、官网展示</p>
-      </el-col>
-      <el-col :span="24">
-        <el-row :gutter="20">
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card class="feature-card" shadow="hover" @click="navigateTo('/articles')">
-              <div class="feature-icon">📄</div>
-              <h3>资讯预览</h3>
-              <p>实时展示中医领域来的各类资讯，包括图文信息、资讯视频、专题</p>
-            </el-card>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card class="feature-card" shadow="hover" @click="navigateTo('/videos')">
-              <div class="feature-icon">📖</div>
-              <h3>在线学习</h3>
-              <p>提供多种学习方式，包括图文、图书、视频、音频、直播等，同时支持学习进度、回顾</p>
-            </el-card>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card class="feature-card" shadow="hover" @click="navigateTo('/exam')">
-              <div class="feature-icon">📝</div>
-              <h3>在线测评</h3>
-              <p>自由配置题库，动态生成考卷，随机抽取题目，及时获取评测结果</p>
-            </el-card>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card class="feature-card" shadow="hover" @click="navigateTo('/consult')">
-              <div class="feature-icon">💬</div>
-              <h3>专家答疑</h3>
-              <p>知名专家实时在线，一对一解答相关疑问，生成知识库便于后续查阅记录</p>
-            </el-card>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card class="feature-card" shadow="hover" @click="navigateTo('/knowledge')">
-              <div class="feature-icon">🎓</div>
-              <h3>知识库</h3>
-              <p>按中医基础理论、中医诊断学、中药学、方剂学、中医内科、中医外科、四大经典等分类</p>
-            </el-card>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card class="feature-card" shadow="hover" @click="navigateTo('/topics')">
-              <div class="feature-icon">📋</div>
-              <h3>专题整合</h3>
-              <p>以专题形式，发布内容资讯，或者学习课程，用于完整的专题学习，专题中可以是图文资讯、电子书、视频及考试评测</p>
-            </el-card>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card class="feature-card" shadow="hover" @click="navigateTo('/profile')">
-              <div class="feature-icon">👤</div>
-              <h3>个人中心</h3>
-              <p>用于管理用户的登录名、个人基本信息，支持手机端实名认证及专业用户管理</p>
-            </el-card>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <el-card class="feature-card" shadow="hover">
-              <div class="feature-icon">🏢</div>
-              <h3>官网展示</h3>
-              <p>支持PC端和移动端适配，浏览平台所发布的内容，在线学习及评测在线移动小程序端</p>
-            </el-card>
-          </el-col>
-        </el-row>
-      </el-col>
-    </el-row>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  ssr: false,
+  layout: false
+})
+
+import { ref, computed } from 'vue'
+import { useRouter } from '#imports'
+import { useUserStore } from '~/stores/user'
+import { authApi } from '~/utils/api/auth'
+
+const router = useRouter()
+const userStore = useUserStore()
+
+const loginType = ref<'phone' | 'password' | 'qrcode'>('phone')
+const loading = ref(false)
+const smsCountdown = ref(0)
+
+const form = ref({
+  mobile: '',
+  code: '',
+  username: '',
+  password: ''
+})
+
+const smsDisabled = computed(() => smsCountdown.value > 0 || !form.value.mobile || form.value.mobile.length !== 11)
+const smsText = computed(() => {
+  if (smsCountdown.value > 0) {
+    return `${smsCountdown.value}s`
+  }
+  return '获取验证码'
+})
+
+const sendSms = async () => {
+  if (process.server) return
+
+  const phone = form.value.mobile.trim()
+  if (!phone || phone.length !== 11) {
+    alert('请输入正确的11位手机号')
+    return
+  }
+
+  try {
+    const data = await authApi.sendSmsCode(phone)
+
+    if (data.success) {
+      console.log('发送成功', data)
+      alert('验证码发送成功！')
+
+      smsCountdown.value = 60
+      const timer = setInterval(() => {
+        smsCountdown.value--
+        if (smsCountdown.value <= 0) clearInterval(timer)
+      }, 1000)
+    } else {
+      alert(data.message || '发送失败')
+    }
+
+  } catch (err: any) {
+    console.error('发送失败：', err)
+    alert('发送失败：' + (err.message || '服务异常'))
+  }
+}
+
+// 短信登录
+const handleSmsLogin = async () => {
+  if (process.server) return
+  if (!form.value.mobile || !form.value.code) {
+    alert('请填写完整信息')
+    return
+  }
+
+  loading.value = true
+
+  try {
+    const data: any = await authApi.smsLogin(form.value.mobile, form.value.code)
+
+    if (data.success && data.data) {
+      const { accessToken, user } = data.data
+      await userStore.login(accessToken, user)
+      router.push('/profile')
+    } else {
+      alert(data.message || '登录失败')
+    }
+  } catch (err: any) {
+    alert(err.message || '登录失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 账号密码登录
+const handlePasswordLogin = async () => {
+  if (process.server) return
+  if (!form.value.username || !form.value.password) {
+    alert('请输入用户名和密码')
+    return
+  }
+
+  loading.value = true
+
+  try {
+    console.log('[Login Attempt] Username:', form.value.username)
+    console.log('[Login Attempt] Password:', form.value.password)
+    
+    const data: any = await authApi.login(form.value.username, form.value.password)
+
+    console.log('[Login Response]', data)
+    
+    if (data.success && data.data) {
+      const { accessToken, user } = data.data
+      console.log('[Login Success] Token:', accessToken)
+      console.log('[Login Success] User:', user)
+      await userStore.login(accessToken, user)
+      router.push('/profile')
+    } else {
+      console.log('[Login Failed] Message:', data.message)
+      alert(data.message || '账号或密码错误')
+    }
+  } catch (err: any) {
+    console.error('[Login Error]', err)
+    alert(err.message || '账号或密码错误')
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>
-.home-page {
-  background: #ffffff;
-}
-
-/* === Banner === */
-.home-banner {
-  background: linear-gradient(135deg, #a8e6cf 0%, #7dd4a0 50%, #6dbf8e 100%);
-  padding: 60px 0;
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #86e8a0 0%, #43b05c 30%, #38a169 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
   position: relative;
   overflow: hidden;
-  max-width: 1200px;
-  margin: 0 auto;
 }
 
-.home-banner::before {
-  content: '';
+.background-decoration {
   position: absolute;
-  top: -100px;
-  right: -100px;
-  width: 400px;
-  height: 400px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
 }
 
-.home-banner::after {
-  content: '';
+.decor-circle {
   position: absolute;
-  bottom: -50px;
-  left: -50px;
-  width: 200px;
-  height: 200px;
-  background: rgba(255, 255, 255, 0.08);
   border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
 }
 
-.banner-content {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  color: #ffffff;
-  padding: 0 20px;
+.circle-1 {
+  width: 120px;
+  height: 120px;
+  top: 10%;
+  left: 25%;
 }
 
-.banner-title {
-  font-size: 48px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.circle-2 {
+  width: 80px;
+  height: 80px;
+  bottom: 15%;
+  right: 20%;
 }
 
-.banner-subtitle {
-  font-size: 20px;
-  margin-bottom: 32px;
-  opacity: 0.95;
+.circle-3 {
+  width: 150px;
+  height: 150px;
+  top: 0;
+  right: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.2) 0px,
+    rgba(255,255,255,0.2) 2px,
+    transparent 2px,
+    transparent 6px
+  );
 }
 
-.banner-illustration {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.circle-4 {
+  width: 180px;
+  height: 180px;
+  bottom: 0;
+  left: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255,255,255,0.2) 0px,
+    rgba(255,255,255,0.2) 2px,
+    transparent 2px,
+    transparent 6px
+  );
 }
 
-.illustration-placeholder {
-  width: 400px;
+.decor-wave {
+  position: absolute;
+  width: 600px;
   height: 300px;
-  background: rgba(255, 255, 255, 0.2);
+  background: transparent;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.wave-1 {
+  top: 10%;
+  left: 30%;
+  transform: rotate(-20deg);
+}
+
+.wave-2 {
+  bottom: 10%;
+  right: 10%;
+  transform: rotate(20deg);
+}
+
+.wave-3 {
+  top: 40%;
+  left: 0;
+  transform: rotate(10deg);
+}
+
+.wave-4 {
+  bottom: 40%;
+  right: 0;
+  transform: rotate(-10deg);
+}
+
+.login-wrapper {
+  display: flex;
+  width: 100%;
+  max-width: 850px;
+  min-height: 520px;
+  position: relative;
+  z-index: 1;
   border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.left-section {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(135deg, #a5f3c3 0%, #43b05c 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
-  font-size: 24px;
 }
 
-/* === Platform Intro === */
-.platform-intro {
-  padding: 60px 0 40px;
-  text-align: center;
-  max-width: 1200px;
-  margin: 0 auto;
+.login-illustration {
+  width: 85%;
+  height: auto;
+  object-fit: contain;
 }
 
-.platform-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #333333;
-  margin-bottom: 12px;
-}
-
-.platform-desc {
-  font-size: 14px;
-  color: #999999;
-  margin-bottom: 40px;
-}
-
-.platform-stats {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  flex-wrap: wrap;
-}
-
-.stat-item {
+.right-section {
+  flex: 1;
+  padding: 50px 40px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 24px;
-  background: #f9f9f9;
-  border-radius: 8px;
-  height: 100%;
+  justify-content: center;
+  background: #fff;
 }
 
-.stat-icon {
-  font-size: 32px;
+.login-box {
+  width: 100%;
+  max-width: 300px;
 }
 
-.stat-info {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.stat-info strong {
-  font-size: 18px;
-  color: #333333;
-}
-
-.stat-info span {
-  font-size: 12px;
-  color: #999999;
-}
-
-/* === Features === */
-.features-section {
-  padding: 40px 0 60px;
-  background: #f5f7fa;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.section-heading {
+.logo-section {
   text-align: center;
-  font-size: 20px;
-  font-weight: 600;
-  color: #333333;
-  margin-bottom: 8px;
-}
-
-.section-desc {
-  text-align: center;
-  font-size: 13px;
-  color: #999999;
   margin-bottom: 32px;
-}
-
-.feature-card {
-  text-align: center;
-  cursor: pointer;
-  height: 100%;
-}
-
-.feature-card :deep(.el-card__body) {
-  padding: 32px 24px;
-}
-
-.feature-icon {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 16px;
-  background: #e8f5ee;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+}
+
+.logo-image {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.title {
   font-size: 28px;
-}
-
-.feature-card h3 {
-  font-size: 16px;
-  font-weight: 500;
-  color: #333333;
-  margin-bottom: 12px;
-}
-
-.feature-card p {
-  font-size: 12px;
-  color: #999999;
-  line-height: 1.6;
+  font-weight: 600;
+  color: #222;
   margin: 0;
 }
 
-@media (max-width: 1024px) {
-  .home-banner {
-    padding: 40px 20px;
-  }
+.login-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
 
-  .banner-title {
-    font-size: 32px;
-  }
+.tab-btn {
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
 
-  .illustration-placeholder {
-    width: 100%;
-    height: 200px;
-  }
+.tab-btn.active {
+  color: #43b05c;
+  font-weight: 600;
+}
 
-  .platform-stats {
+.tab-divider {
+  color: #ccc;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  width: 100%;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: #f9f9f9;
+  transition: all 0.3s;
+}
+
+.input-wrapper:focus-within {
+  border-color: #43b05c;
+  background: #fff;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: #999;
+}
+
+.form-input {
+  width: 100%;
+  padding-left: 24px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: #aaa;
+}
+
+.sms-btn {
+  position: absolute;
+  right: 8px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  background: #43b05c;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.sms-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #43b05c 0%, #38a169 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #38a169 0%, #2d8a5a 100%);
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.qrcode-section {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.qrcode-wrapper {
+  width: 200px;
+  height: 200px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qrcode-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .login-wrapper {
     flex-direction: column;
-    align-items: center;
+  }
+
+  .left-section {
+    display: none;
+  }
+
+  .right-section {
+    padding: 30px 20px;
   }
 }
 </style>

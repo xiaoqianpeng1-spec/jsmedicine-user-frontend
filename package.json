@@ -3,27 +3,23 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "build": "nuxt build",
     "dev": "nuxt dev",
+    "build": "nuxt build",
     "generate": "nuxt generate",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "typecheck": "vue-tsc --noEmit"
+    "preview": "nuxt preview"
   },
   "dependencies": {
-    "@element-plus/nuxt": "^1.1.5",
-    "@pinia/nuxt": "^0.9.0",
-    "axios": "^1.7.0",
-    "element-plus": "^2.14.1",
-    "nuxt": "^3.14.0",
-    "pinia": "^2.2.0",
-    "vue": "^3.5.0"
+    "@pinia/nuxt": "^0.5.1",
+    "nuxt": "^3.10.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
-    "typescript": "^5.6.0",
-    "vue-tsc": "^2.1.0"
+    "@nuxtjs/tailwindcss": "^6.11.4",
+    "@types/node": "^20.19.41",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.3.2"
   }
 }

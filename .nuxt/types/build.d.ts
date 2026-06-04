@@ -13,7 +13,7 @@ declare module "#build/root-component.mjs";
 declare module "#build/plugins.server.mjs";
 declare module "#build/test-component-wrapper.mjs";
 declare module "#build/devtools/settings.mjs";
-declare module "#build/runtime.vue-devtools-client.u9zjOVdokmcEgXd_18E1GJuYQB4xpQkrEa8wK_vUaUI.js";
+declare module "#build/runtime.vue-devtools-client.chAaZTtT4ZlyAl09Wb7wrVWe6H31zE3rqfaVIKxWDNQ.js";
 declare module "#build/routes.mjs";
 declare module "#build/pages.mjs";
 declare module "#build/router.options.mjs";

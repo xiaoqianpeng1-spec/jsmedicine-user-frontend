@@ -1,228 +1,333 @@
 <template>
   <div class="topics-page">
-    <div class="page-header">
+    <!-- 顶部横幅 -->
+    <section class="page-banner">
       <div class="container">
-        <h1 class="page-title">专题</h1>
-        <div class="search-bar">
-          <input v-model="keyword" type="text" placeholder="搜索专题..." class="search-input" @keyup.enter="handleSearch" />
-          <button class="search-btn" @click="handleSearch">搜索</button>
+        <h1 class="banner-title">专题中心</h1>
+        <p class="banner-desc">精选专题，深入学习中医知识体系</p>
+      </div>
+    </section>
+
+    <!-- 面包屑导航 -->
+    <div class="breadcrumb-section">
+      <div class="container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" @click="goToHome">首页</span>
+          <span class="breadcrumb-separator">></span>
+          <span class="breadcrumb-item active">专题</span>
         </div>
       </div>
     </div>
 
-    <div class="container">
-      <div class="topics-content">
-        <div v-if="loading" class="loading-state">
-          <div class="loading-spinner"></div>
-          <p>加载中...</p>
+    <!-- 搜索框 -->
+    <section class="search-section">
+      <div class="container">
+        <div class="search-box">
+          <input 
+            type="text" 
+            v-model="keyword" 
+            placeholder="搜索专题名称..." 
+            class="search-input"
+            @keyup.enter="loadTopics"
+          />
+          <button class="search-btn" @click="loadTopics">
+            搜索
+          </button>
         </div>
+      </div>
+    </section>
 
-        <div v-else-if="topics.length === 0" class="empty-state">
-          <p>暂无专题</p>
-        </div>
-
-        <div v-else class="topics-grid">
-          <div v-for="topic in topics" :key="topic.id" class="topic-card" @click="navigateTo(`/topics/${topic.id}`)">
-            <div class="topic-cover">
-              <img :src="topic.coverUrl || '/placeholder.jpg'" :alt="topic.title" />
+    <!-- 专题列表 -->
+    <section class="topics-section">
+      <div class="container">
+        <div class="topics-grid">
+          <div 
+            v-for="topic in topics" 
+            :key="topic.id" 
+            class="topic-card"
+            @click="goToTopic(topic.id)"
+          >
+            <div class="topic-image">
+              <img :src="topic.coverUrl" :alt="topic.title" />
             </div>
             <div class="topic-info">
               <h3 class="topic-title">{{ topic.title }}</h3>
               <p class="topic-summary">{{ topic.summary }}</p>
               <div class="topic-meta">
-                <span class="topic-items">{{ topic.items?.length || 0 }} 个资源</span>
-                <span class="topic-views">{{ topic.viewCount }} 浏览</span>
+                <span class="topic-date">{{ formatDate(topic.publishedAt) }}</span>
+                <div class="topic-stats">
+                  <span class="stat-views">👁️ {{ topic.viewCount }}</span>
+                  <span class="stat-favorites">❤️ {{ topic.favoriteCount }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        <div v-if="totalPages > 1" class="pagination">
-          <button :disabled="currentPage === 1" @click="changePage(currentPage - 1)">上一页</button>
-          <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
-          <button :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">下一页</button>
+        <div v-if="topics.length === 0" class="empty-state">
+          <p>暂无专题</p>
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- 分页组件 -->
+    <section class="pagination-section" v-if="total > pageSize">
+      <div class="container">
+        <div class="pagination">
+          <button 
+            class="page-btn" 
+            :disabled="currentPage === 1"
+            @click="goToPage(currentPage - 1)"
+          >
+            上一页
+          </button>
+          <span class="page-info">
+            第 {{ currentPage }} / {{ totalPages }} 页
+          </span>
+          <button 
+            class="page-btn" 
+            :disabled="currentPage === totalPages"
+            @click="goToPage(currentPage + 1)"
+          >
+            下一页
+          </button>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { topicsApi, type AppTopicResponse } from '~/utils/api/topics'
+
+const router = useRouter()
+
+const topics = ref<AppTopicResponse[]>([])
 const keyword = ref('')
-const topics = ref<any[]>([])
-const loading = ref(false)
 const currentPage = ref(1)
-const pageSize = ref(12)
+const pageSize = ref(8)
 const total = ref(0)
 
-const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
+const totalPages = computed(() => {
+  return Math.ceil(total.value / pageSize.value)
+})
 
-async function fetchTopics() {
-  loading.value = true
+const goToHome = () => {
+  router.push('/')
+}
+
+const goToTopic = (id: number) => {
+  router.push(`/topics/${id}`)
+}
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+const loadTopics = async () => {
   try {
-    const { getTopicList } = await import('~/api')
-    const result = await getTopicList({
+    const response = await topicsApi.getTopics({
       page: currentPage.value,
       size: pageSize.value,
-      keyword: keyword.value || undefined,
+      keyword: keyword.value || undefined
     })
-    topics.value = result.records || []
-    total.value = result.total || 0
+    if (response.success) {
+      topics.value = response.data.records
+      total.value = response.data.total
+      currentPage.value = response.data.page
+      pageSize.value = response.data.size
+    }
   } catch (error) {
-    console.error('获取专题列表失败:', error)
-  } finally {
-    loading.value = false
+    console.error('Failed to load topics:', error)
   }
 }
 
-function handleSearch() {
-  currentPage.value = 1
-  fetchTopics()
-}
-
-function changePage(page: number) {
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return
   currentPage.value = page
-  fetchTopics()
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  loadTopics()
 }
 
 onMounted(() => {
-  fetchTopics()
+  loadTopics()
 })
 </script>
 
 <style scoped>
 .topics-page {
+  font-family: "Microsoft YaHei", sans-serif;
   min-height: 100vh;
-  background: var(--bg-body);
+  background: #fff;
 }
 
-.page-header {
-  background: var(--bg-white);
-  padding: var(--spacing-lg) 0;
-  box-shadow: var(--shadow-sm);
+.container {
+  width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
-.page-title {
-  font-size: 24px;
+/* 顶部横幅 */
+.page-banner {
+  background: linear-gradient(135deg, #2d5a27 0%, #38a169 100%);
+  padding: 60px 0;
+  text-align: center;
+}
+
+.banner-title {
+  font-size: 36px;
+  color: #fff;
+  margin: 0 0 12px 0;
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-md);
 }
 
-.search-bar {
+.banner-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* 面包屑导航 */
+.breadcrumb-section {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.breadcrumb {
   display: flex;
-  gap: var(--spacing-sm);
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.breadcrumb-item:hover {
+  color: #2d5a27;
+}
+
+.breadcrumb-item.active {
+  color: #999;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: #ccc;
+}
+
+/* 搜索区域 */
+.search-section {
+  padding: 20px 0;
+  background: #fff;
+}
+
+.search-box {
+  display: flex;
+  max-width: 400px;
+  margin: 0 auto;
+  gap: 8px;
 }
 
 .search-input {
   flex: 1;
-  padding: 10px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 25px;
   font-size: 14px;
   outline: none;
-  transition: border-color var(--transition-fast);
+  transition: border-color 0.3s;
 }
 
 .search-input:focus {
-  border-color: var(--primary);
+  border-color: #2d5a27;
 }
 
 .search-btn {
-  padding: 10px 24px;
-  background: var(--primary);
-  color: var(--bg-white);
-  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 25px;
   font-size: 14px;
-  transition: background var(--transition-fast);
+  cursor: pointer;
+  transition: background 0.3s;
 }
 
 .search-btn:hover {
-  background: var(--primary-dark);
+  background: #1f421b;
 }
 
-.topics-content {
-  padding: var(--spacing-xl) 0;
-}
-
-.loading-state,
-.empty-state {
-  text-align: center;
-  padding: var(--spacing-xxl) 0;
-  color: var(--text-tertiary);
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  margin: 0 auto var(--spacing-md);
-  border: 3px solid var(--border-light);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+/* 专题列表区域 */
+.topics-section {
+  padding: 30px 0 50px;
 }
 
 .topics-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
 }
 
 .topic-card {
-  background: var(--bg-white);
-  border-radius: var(--radius-lg);
+  background: #fff;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
 }
 
 .topic-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
-.topic-cover {
-  width: 100%;
-  height: 160px;
+.topic-image {
+  position: relative;
+  height: 200px;
   overflow: hidden;
 }
 
-.topic-cover img {
+.topic-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.topic-card:hover .topic-image img {
+  transform: scale(1.05);
 }
 
 .topic-info {
-  padding: var(--spacing-md);
+  padding: 16px 20px;
 }
 
 .topic-title {
   font-size: 16px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-sm);
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
 }
 
 .topic-summary {
   font-size: 13px;
-  color: var(--text-secondary);
+  color: #666;
   line-height: 1.5;
-  margin-bottom: var(--spacing-sm);
+  margin: 0 0 12px 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -230,59 +335,84 @@ onMounted(() => {
 .topic-meta {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+}
+
+.topic-date {
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: #999;
+}
+
+.topic-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-views,
+.stat-favorites {
+  font-size: 13px;
+  color: #999;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 16px;
+}
+
+/* 分页区域 */
+.pagination-section {
+  padding: 30px 0;
+  background: #fff;
 }
 
 .pagination {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-xl);
+  justify-content: center;
+  gap: 20px;
 }
 
-.pagination button {
-  padding: 8px 20px;
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+.page-btn {
+  padding: 10px 20px;
+  background: #f5f7fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   font-size: 14px;
-  color: var(--text-primary);
-  transition: all var(--transition-fast);
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.pagination button:hover:not(:disabled) {
-  background: var(--primary);
-  color: var(--bg-white);
-  border-color: var(--primary);
+.page-btn:hover:not(:disabled) {
+  background: #e8f5e9;
+  border-color: #2d5a27;
+  color: #2d5a27;
 }
 
-.pagination button:disabled {
+.page-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 .page-info {
   font-size: 14px;
-  color: var(--text-secondary);
+  color: #666;
 }
 
-@media (max-width: 1024px) {
-  .topics-grid {
-    grid-template-columns: repeat(3, 1fr);
+@media (max-width: 1200px) {
+  .container {
+    width: 100%;
   }
 }
 
 @media (max-width: 768px) {
   .topics-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .topics-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .banner-title {
+    font-size: 28px;
   }
 }
 </style>

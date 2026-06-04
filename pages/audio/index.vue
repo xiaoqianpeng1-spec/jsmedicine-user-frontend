@@ -1,304 +1,455 @@
 <template>
   <div class="audio-page">
-    <div class="page-header">
+    <!-- 顶部横幅 -->
+    <section class="page-banner">
       <div class="container">
-        <h1 class="page-title">音频</h1>
-        <div class="search-bar">
-          <input v-model="keyword" type="text" placeholder="搜索音频..." class="search-input" @keyup.enter="handleSearch" />
-          <button class="search-btn" @click="handleSearch">搜索</button>
+        <h1 class="banner-title">音频课程</h1>
+        <p class="banner-desc">随时随地，听学中医知识</p>
+      </div>
+    </section>
+
+    <!-- 面包屑导航 -->
+    <div class="breadcrumb-section">
+      <div class="container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-item" @click="goToHome">首页</span>
+          <span class="breadcrumb-separator">></span>
+          <span class="breadcrumb-item active">音频</span>
         </div>
       </div>
     </div>
 
-    <div class="container">
-      <div class="audio-content">
-        <div v-if="loading" class="loading-state">
-          <div class="loading-spinner"></div>
-          <p>加载中...</p>
-        </div>
-
-        <div v-else-if="audios.length === 0" class="empty-state">
-          <p>暂无音频</p>
-        </div>
-
-        <div v-else class="audio-list">
-          <div v-for="audio in audios" :key="audio.id" class="audio-item" @click="navigateTo(`/audio/${audio.id}`)">
-            <div class="audio-icon">
-              <span>🎵</span>
-            </div>
-            <div class="audio-info">
-              <h3 class="audio-title">{{ audio.title }}</h3>
-              <p class="audio-desc">{{ audio.description }}</p>
-              <div class="audio-meta">
-                <span class="audio-duration">{{ formatDuration(audio.durationSeconds) }}</span>
-                <span class="audio-views">{{ audio.playCount }} 播放</span>
-                <span class="audio-date">{{ formatDate(audio.publishedAt) }}</span>
+    <!-- 音频列表 -->
+    <section class="audio-section">
+      <div class="container">
+        <div class="audio-grid">
+          <div 
+            v-for="audio in audios" 
+            :key="audio.id" 
+            class="audio-card"
+            @click="goToDetail(audio.id)"
+          >
+            <div class="audio-cover">
+              <img :src="audio.cover" :alt="audio.title" />
+              <div class="audio-play-overlay">
+                <span class="play-btn">🎵</span>
               </div>
             </div>
-            <div class="audio-play-btn">
-              <span>▶</span>
+            <h3 class="audio-title">{{ audio.title }}</h3>
+            <p class="audio-desc">{{ audio.desc }}</p>
+            <div class="audio-tags">
+              <span class="audio-tag" :class="audio.tagClass">{{ audio.tag }}</span>
+            </div>
+            <div class="audio-stats">
+              <span class="stat-views">👁️ {{ audio.views }}</span>
+              <span class="stat-likes">⭐ {{ audio.likes }}</span>
             </div>
           </div>
         </div>
-
-        <div v-if="totalPages > 1" class="pagination">
-          <button :disabled="currentPage === 1" @click="changePage(currentPage - 1)">上一页</button>
-          <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
-          <button :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">下一页</button>
+        
+        <!-- 分页 -->
+        <div class="pagination">
+          <button class="page-btn prev" @click="prevPage">‹</button>
+          <button 
+            v-for="page in totalPages" 
+            :key="page" 
+            class="page-btn"
+            :class="{ active: currentPage === page }"
+            @click="currentPage = page"
+          >
+            {{ page }}
+          </button>
+          <button class="page-btn next" @click="nextPage">›</button>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-const keyword = ref('')
-const audios = ref<any[]>([])
-const loading = ref(false)
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
 const currentPage = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
+const pageSize = 12
 
-const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
+const audios = ref([
+  {
+    id: 1,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医理论基础',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-red',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 2,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医方药学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-blue',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 3,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医药适宜技术',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-purple',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 4,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20green%20style%20traditional&image_size=landscape_4_3',
+    title: '实用针灸推拿学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-green',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 5,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医理论基础',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-red',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 6,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医方药学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-blue',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 7,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医药适宜技术',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-purple',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 8,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20green%20style%20traditional&image_size=landscape_4_3',
+    title: '实用针灸推拿学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-green',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 9,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医理论基础',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-red',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 10,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医方药学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-blue',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 11,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
+    title: '实用中医药适宜技术',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-purple',
+    views: 435678,
+    likes: 43
+  },
+  {
+    id: 12,
+    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20green%20style%20traditional&image_size=landscape_4_3',
+    title: '实用针灸推拿学',
+    desc: '奇经八脉的功能和分布',
+    tag: '中医',
+    tagClass: 'tag-green',
+    views: 435678,
+    likes: 43
+  }
+])
 
-async function fetchAudios() {
-  loading.value = true
-  try {
-    const { getPodcastList } = await import('~/api')
-    const result = await getPodcastList({
-      page: currentPage.value,
-      size: pageSize.value,
-      keyword: keyword.value || undefined,
-    })
-    audios.value = result.records || []
-    total.value = result.total || 0
-  } catch (error) {
-    console.error('获取音频列表失败:', error)
-  } finally {
-    loading.value = false
+const totalPages = computed(() => Math.ceil(audios.value.length / pageSize))
+
+const goToHome = () => {
+  router.push('/')
+}
+
+const goToDetail = (id: number) => {
+  router.push(`/audio/${id}`)
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
   }
 }
 
-function handleSearch() {
-  currentPage.value = 1
-  fetchAudios()
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
 }
-
-function changePage(page: number) {
-  currentPage.value = page
-  fetchAudios()
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN')
-}
-
-function formatDuration(seconds: number) {
-  if (!seconds) return '00:00'
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-}
-
-onMounted(() => {
-  fetchAudios()
-})
 </script>
 
 <style scoped>
 .audio-page {
+  font-family: "Microsoft YaHei", sans-serif;
   min-height: 100vh;
-  background: var(--bg-body);
+  background: #fff;
 }
 
-.page-header {
-  background: var(--bg-white);
-  padding: var(--spacing-lg) 0;
-  box-shadow: var(--shadow-sm);
+.container {
+  width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-md);
-}
-
-.search-bar {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.search-input {
-  flex: 1;
-  padding: 10px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  outline: none;
-  transition: border-color var(--transition-fast);
-}
-
-.search-input:focus {
-  border-color: var(--primary);
-}
-
-.search-btn {
-  padding: 10px 24px;
-  background: var(--primary);
-  color: var(--bg-white);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  transition: background var(--transition-fast);
-}
-
-.search-btn:hover {
-  background: var(--primary-dark);
-}
-
-.audio-content {
-  padding: var(--spacing-xl) 0;
-}
-
-.loading-state,
-.empty-state {
+/* 顶部横幅 */
+.page-banner {
+  background: linear-gradient(135deg, #2d5a27 0%, #38a169 100%);
+  padding: 60px 0;
   text-align: center;
-  padding: var(--spacing-xxl) 0;
-  color: var(--text-tertiary);
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  margin: 0 auto var(--spacing-md);
-  border: 3px solid var(--border-light);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.banner-title {
+  font-size: 36px;
+  color: #fff;
+  margin: 0 0 12px 0;
+  font-weight: 600;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.banner-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
 }
 
-.audio-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
+/* 面包屑导航 */
+.breadcrumb-section {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.audio-item {
+.breadcrumb {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.breadcrumb-item {
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: color 0.3s;
 }
 
-.audio-item:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateX(4px);
+.breadcrumb-item:hover {
+  color: #2d5a27;
 }
 
-.audio-icon {
-  width: 60px;
-  height: 60px;
-  background: var(--primary-light);
-  border-radius: var(--radius-md);
+.breadcrumb-item.active {
+  color: #999;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: #ccc;
+}
+
+/* 音频列表区域 */
+.audio-section {
+  padding: 30px 0 50px;
+}
+
+.audio-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.audio-card {
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.audio-card:hover {
+  transform: translateY(-4px);
+}
+
+.audio-cover {
+  position: relative;
+  height: 140px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.audio-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.audio-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  background: rgba(45, 90, 39, 0.9);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
-  flex-shrink: 0;
 }
 
-.audio-info {
-  flex: 1;
-  min-width: 0;
+.play-btn {
+  color: #fff;
+  font-size: 18px;
 }
 
 .audio-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-xs);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 6px 0;
 }
 
 .audio-desc {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: var(--spacing-sm);
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.audio-meta {
-  display: flex;
-  gap: var(--spacing-lg);
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: #999;
+  margin: 0 0 8px 0;
 }
 
-.audio-play-btn {
-  width: 40px;
-  height: 40px;
-  background: var(--primary);
-  border-radius: 50%;
+.audio-tags {
+  margin-bottom: 8px;
+}
+
+.audio-tag {
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 2px;
+}
+
+.tag-red {
+  background: #FDECEC;
+  color: #D93030;
+}
+
+.tag-blue {
+  background: #E8F4FD;
+  color: #3B82F6;
+}
+
+.tag-purple {
+  background: #F3E8FF;
+  color: #8B5CF6;
+}
+
+.tag-green {
+  background: #E8F5E9;
+  color: #22C55E;
+}
+
+.audio-stats {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--bg-white);
-  font-size: 14px;
-  flex-shrink: 0;
-  transition: background var(--transition-fast);
+  gap: 16px;
 }
 
-.audio-item:hover .audio-play-btn {
-  background: var(--primary-dark);
+.stat-views,
+.stat-likes {
+  font-size: 12px;
+  color: #999;
 }
 
+/* 分页 */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-xl);
+  gap: 8px;
+  margin-top: 40px;
 }
 
-.pagination button {
-  padding: 8px 20px;
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+.page-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fff;
   font-size: 14px;
-  color: var(--text-primary);
-  transition: all var(--transition-fast);
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.pagination button:hover:not(:disabled) {
-  background: var(--primary);
-  color: var(--bg-white);
-  border-color: var(--primary);
+.page-btn:hover {
+  border-color: #2d5a27;
+  color: #2d5a27;
 }
 
-.pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.page-btn.active {
+  background: #2d5a27;
+  border-color: #2d5a27;
+  color: #fff;
 }
 
-.page-info {
-  font-size: 14px;
-  color: var(--text-secondary);
+.page-btn.prev,
+.page-btn.next {
+  width: auto;
+  padding: 0 12px;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .audio-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .banner-title {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .audio-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
