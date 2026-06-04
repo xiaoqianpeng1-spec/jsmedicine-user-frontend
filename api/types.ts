@@ -75,6 +75,19 @@ export interface AppWechatLoginResponse {
   user: AppUserInfo
 }
 
+export interface AppWechatWebQrConfigResponse {
+  appId: string
+  redirectUri: string
+  scope: string
+  state: string
+  expiresIn: number
+}
+
+export interface AppWechatWebLoginRequest {
+  code: string
+  state: string
+}
+
 export interface AppQaQuestionRequest {
   expertCategoryId: number
   expertId: number

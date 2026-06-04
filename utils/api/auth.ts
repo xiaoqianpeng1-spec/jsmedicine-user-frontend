@@ -132,5 +132,20 @@ export const authApi = {
         Authorization: `Bearer ${token}`
       }
     })
+  },
+
+  // 获取微信扫码配置
+  async getWechatWebQrConfig() {
+    return useApi('/api/v1/app/auth/wechat-web/qr-config', {
+      method: 'GET'
+    })
+  },
+
+  // 微信扫码登录
+  async wechatWebLogin(code: string, state: string) {
+    return useApi('/api/v1/app/auth/wechat-web/login', {
+      method: 'POST',
+      body: { code, state }
+    })
   }
 }

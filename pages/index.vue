@@ -139,7 +139,54 @@
           <!-- 二维码登录 -->
           <div v-else class="qrcode-section">
             <div class="qrcode-wrapper">
-              <img src="https://neeko-copilot.bytedance.net/api/text_to_image?prompt=QR%20code%20simple%20black%20and%20white%20clean%20background&image_size=square" alt="登录二维码" />
+              <!-- 加载中 -->
+              <div v-if="qrLoading" class="qrcode-loading">
+                <div class="spinner"></div>
+                <p>正在获取二维码...</p>
+              </div>
+              
+              <!-- 错误状态 -->
+              <div v-else-if="qrError" class="qrcode-error">
+                <p>{{ qrError }}</p>
+                <button @click="fetchQrConfig" class="retry-btn">重新获取</button>
+              </div>
+              
+              <!-- 二维码内容 -->
+      <div v-else class="qrcode-content">
+        <div v-if="qrCodeUrl" class="qrcode-display">
+          <a :href="qrCodeUrl" target="_blank" class="qrcode-link">
+            <img 
+              :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeUrl)}`" 
+              alt="微信扫码登录"
+              class="qrcode-image"
+            />
+          </a>
+          <p class="qrcode-hint">点击二维码在新窗口打开微信登录</p>
+        </div>
+        
+        <!-- 二维码状态提示 -->
+        <div class="qrcode-status">
+          <p v-if="scanStatus === 'waiting'" class="status-waiting">
+            <span class="icon">📱</span>
+            请使用微信扫描二维码登录
+          </p>
+          <p v-else-if="scanStatus === 'scanned'" class="status-scanned">
+            <span class="icon">✅</span>
+            已扫描，请在手机上确认登录
+          </p>
+          <p v-else-if="scanStatus === 'expired'" class="status-expired">
+            <span class="icon">⏰</span>
+            二维码已过期
+            <button @click="fetchQrConfig" class="refresh-btn">刷新二维码</button>
+          </p>
+        </div>
+        
+        <!-- 倒计时 -->
+        <div class="qrcode-timer" v-if="scanStatus === 'waiting' && qrExpiresIn > 0">
+          <span>有效期：</span>
+          <span class="timer-value">{{ formatTime(qrExpiresIn) }}</span>
+        </div>
+      </div>
             </div>
           </div>
         </div>
@@ -154,17 +201,28 @@ definePageMeta({
   layout: false
 })
 
-import { ref, computed } from 'vue'
-import { useRouter } from '#imports'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from '#imports'
 import { useUserStore } from '~/stores/user'
 import { authApi } from '~/utils/api/auth'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const loginType = ref<'phone' | 'password' | 'qrcode'>('phone')
 const loading = ref(false)
 const smsCountdown = ref(0)
+
+// 二维码登录相关状态
+const qrLoading = ref(false)
+const qrError = ref('')
+const qrConfig = ref<any>(null)
+const qrCodeUrl = ref('')
+const qrExpiresIn = ref(0)
+const scanStatus = ref<'waiting' | 'scanned' | 'expired'>('waiting')
+const qrPollTimer = ref<NodeJS.Timeout | null>(null)
+const qrExpireTimer = ref<NodeJS.Timeout | null>(null)
 
 const form = ref({
   mobile: '',
@@ -274,6 +332,158 @@ const handlePasswordLogin = async () => {
     loading.value = false
   }
 }
+
+// 格式化时间
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+// 停止轮询
+const stopPollTimer = () => {
+  if (qrPollTimer.value) {
+    clearInterval(qrPollTimer.value)
+    qrPollTimer.value = null
+  }
+}
+
+// 开始过期倒计时
+const startExpireTimer = () => {
+  if (qrExpireTimer.value) {
+    clearInterval(qrExpireTimer.value)
+  }
+  qrExpireTimer.value = setInterval(() => {
+    qrExpiresIn.value--
+    if (qrExpiresIn.value <= 0) {
+      if (qrExpireTimer.value) {
+        clearInterval(qrExpireTimer.value)
+      }
+      scanStatus.value = 'expired'
+    }
+  }, 1000)
+}
+
+// 开始轮询检查回调
+const startPollTimer = () => {
+  stopPollTimer()
+  qrPollTimer.value = setInterval(() => {
+    // 检查 URL 中是否有微信回调参数
+    const query = route.query
+    if (query.code && query.state) {
+      handleWechatCallback(query.code as string, query.state as string)
+    }
+  }, 1000)
+}
+
+// 获取二维码配置
+const fetchQrConfig = async () => {
+  if (process.server) return
+  
+  qrLoading.value = true
+  qrError.value = ''
+  scanStatus.value = 'waiting'
+
+  // 清除之前的定时器
+  stopPollTimer()
+  if (qrExpireTimer.value) {
+    clearInterval(qrExpireTimer.value)
+  }
+
+  try {
+    const data: any = await authApi.getWechatWebQrConfig()
+    
+    if (data.success && data.data) {
+      qrConfig.value = data.data
+      qrExpiresIn.value = data.data.expiresIn || 300
+      
+      // 构建微信登录二维码 URL
+      qrCodeUrl.value = `https://open.weixin.qq.com/connect/qrconnect?appid=${data.data.appId}&redirect_uri=${encodeURIComponent(data.data.redirectUri)}&response_type=code&scope=${data.data.scope}&state=${data.data.state}#wechat_redirect`
+      
+      startExpireTimer()
+      startPollTimer()
+    } else {
+      qrError.value = data.message || '获取二维码配置失败'
+    }
+  } catch (err: any) {
+    qrError.value = err.message || '网络错误，请稍后重试'
+  } finally {
+    qrLoading.value = false
+  }
+}
+
+// 处理微信回调
+const handleWechatCallback = async (code: string, state: string) => {
+  stopPollTimer()
+  if (qrExpireTimer.value) {
+    clearInterval(qrExpireTimer.value)
+  }
+
+  loading.value = true
+  scanStatus.value = 'scanned'
+
+  try {
+    const data: any = await authApi.wechatWebLogin(code, state)
+    
+    if (data.success && data.data) {
+      const { accessToken, user, needBindMobile, bindToken } = data.data
+      
+      // 保存登录信息
+      await userStore.login(accessToken, user)
+      
+      if (needBindMobile && bindToken) {
+        // 需要绑定手机号，跳转到绑定页面
+        router.push({
+          path: '/settings/mobile',
+          query: { bindToken }
+        })
+      } else {
+        // 登录成功，跳转到个人中心
+        router.push('/profile')
+      }
+    } else {
+      qrError.value = data.message || '登录失败'
+      scanStatus.value = 'waiting'
+      fetchQrConfig()
+    }
+  } catch (err: any) {
+    qrError.value = err.message || '登录失败，请重试'
+    scanStatus.value = 'waiting'
+    fetchQrConfig()
+  } finally {
+    loading.value = false
+  }
+}
+
+// 监听登录类型切换
+watch(loginType, (newType) => {
+  if (newType === 'qrcode') {
+    fetchQrConfig()
+  } else {
+    // 切换到其他登录方式时，清除二维码相关状态
+    stopPollTimer()
+    if (qrExpireTimer.value) {
+      clearInterval(qrExpireTimer.value)
+    }
+  }
+})
+
+// 组件挂载时检查是否已有回调参数
+onMounted(() => {
+  const query = route.query
+  if (query.code && query.state) {
+    loginType.value = 'qrcode'
+    handleWechatCallback(query.code as string, query.state as string)
+  }
+})
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  stopPollTimer()
+  if (qrExpireTimer.value) {
+    clearInterval(qrExpireTimer.value)
+  }
+})
 </script>
 
 <style scoped>
@@ -574,6 +784,134 @@ const handlePasswordLogin = async () => {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.qrcode-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.qrcode-link {
+  display: block;
+  text-decoration: none;
+}
+
+.qrcode-image {
+  width: 200px;
+  height: 200px;
+  display: block;
+}
+
+.qrcode-hint {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+.qrcode-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #43b05c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.qrcode-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  text-align: center;
+  padding: 20px;
+}
+
+.qrcode-error p {
+  color: #666;
+  margin: 0;
+}
+
+.retry-btn, .refresh-btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #43b05c;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.retry-btn:hover, .refresh-btn:hover {
+  background: #38a169;
+}
+
+.qrcode-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+}
+
+.qrcode-status {
+  text-align: center;
+  width: 100%;
+}
+
+.qrcode-status p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-direction: column;
+}
+
+.qrcode-status .icon {
+  font-size: 24px;
+}
+
+.status-scanned {
+  color: #43b05c !important;
+}
+
+.status-expired {
+  color: #e53e3e !important;
+}
+
+.qrcode-timer {
+  font-size: 12px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timer-value {
+  color: #43b05c;
+  font-weight: 600;
+  font-family: monospace;
 }
 
 @media (max-width: 768px) {
