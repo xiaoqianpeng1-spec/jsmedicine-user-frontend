@@ -1,7 +1,10 @@
 export default defineNuxtRouteMiddleware((to, from) => {
-  const token = useCookie<string | null>('auth_token')
+  const userStore = useUserStore()
   
-  if (!token.value) {
-    return navigateTo('/login', { redirectCode: 302 })
+  if (!userStore.isLoggedIn && !userStore.token) {
+    return navigateTo('/login', { 
+      redirectCode: 302,
+      query: { redirect: to.fullPath }
+    })
   }
 })

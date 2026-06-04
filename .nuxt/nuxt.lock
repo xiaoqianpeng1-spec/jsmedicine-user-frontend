@@ -1,8 +1,8 @@
 {
-  "pid": 816,
-  "startedAt": 1780244382509,
+  "pid": 25792,
+  "startedAt": 1780589422259,
   "command": "dev",
-  "cwd": "C:/Desktop/NuxtProject",
+  "cwd": "D:/work/jsmedicine-user-frontend",
   "port": 3000,
   "hostname": "::1",
   "url": "http://[::1]:3000"

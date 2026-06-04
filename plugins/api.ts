@@ -1,5 +1,3 @@
-import { setupInterceptors } from '~/api/request'
-
 export default defineNuxtPlugin(() => {
-  setupInterceptors()
+  // 拦截器已在 request.ts 中内置处理
 })

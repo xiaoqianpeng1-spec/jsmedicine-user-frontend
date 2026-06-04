@@ -1,65 +1,50 @@
-import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
+import type { UseFetchOptions } from '#app'
 
-const apiClient: AxiosInstance = axios.create({
-  baseURL: '/api/v1',
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
+const BASE_URL = '/api/v1'
 
-export function setupInterceptors() {
-  apiClient.interceptors.request.use(
-    (config) => {
-      const token = useCookie<string | null>('auth_token')
-      if (token.value) {
-        config.headers.Authorization = `Bearer ${token.value}`
-      }
-      return config
+export function request<T = any>(url: string, options: UseFetchOptions<T> = {}) {
+  const token = useCookie<string | null>('token')
+
+  return $fetch<T>(url, {
+    baseURL: BASE_URL,
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+      ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
     },
-    (error: AxiosError) => {
-      return Promise.reject(error)
-    }
-  )
-
-  apiClient.interceptors.response.use(
-    (response: AxiosResponse) => {
+    onResponse({ response }) {
       const { data } = response
-      if (data.success) {
-        return data.data
-      }
-      return Promise.reject(new Error(data.message || '请求失败'))
-    },
-    (error: AxiosError) => {
-      if (error.response) {
-        const { status } = error.response
-        switch (status) {
-          case 401:
-            const token = useCookie<string | null>('auth_token')
-            token.value = null
-            navigateTo('/login')
-            break
-          case 403:
-            console.error('没有权限访问')
-            break
-          case 404:
-            console.error('请求的资源不存在')
-            break
-          case 500:
-            console.error('服务器错误')
-            break
-          default:
-            console.error('请求失败:', error.message)
+      if (data && (data as any).success !== undefined) {
+        if ((data as any).success) {
+          return (data as any).data
         }
+        throw new Error((data as any).message || '请求失败')
       }
-      return Promise.reject(error)
-    }
-  )
+      return data
+    },
+    onResponseError({ response }) {
+      const { status } = response
+      switch (status) {
+        case 401:
+          const token = useCookie<string | null>('token')
+          token.value = null
+          navigateTo('/')
+          break
+        case 403:
+          console.error('没有权限访问')
+          break
+        case 404:
+          console.error('请求的资源不存在')
+          break
+        case 500:
+          console.error('服务器错误')
+          break
+        default:
+          console.error('请求失败:', response.statusText)
+      }
+    },
+  })
 }
 
-export function request<T = any>(config: AxiosRequestConfig): Promise<T> {
-  return apiClient.request<any, T>(config)
-}
-
-export default apiClient
+export default request

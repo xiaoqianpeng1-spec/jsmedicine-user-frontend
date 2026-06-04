@@ -1,4 +1,4 @@
-import { request } from '../request'
+import request from '../request'
 import type {
   AppLoginRequest,
   AppSmsCodeRequest,
@@ -8,65 +8,72 @@ import type {
   AppLoginResponse,
   AppWechatLoginResponse,
   CurrentAppUserResponse,
+  AppWechatWebQrConfigResponse,
+  AppWechatWebLoginRequest,
 } from '~/api/types'
 
 export function login(data: AppLoginRequest) {
-  return request<AppLoginResponse>({
-    url: '/app/auth/login',
+  return request<AppLoginResponse>('/app/auth/login', {
     method: 'POST',
-    data,
+    body: data,
   })
 }
 
 export function sendSmsCode(data: AppSmsCodeRequest) {
-  return request<void>({
-    url: '/app/auth/sms-code',
+  return request<void>('/app/auth/sms-code', {
     method: 'POST',
-    data,
+    body: data,
   })
 }
 
 export function smsLogin(data: AppSmsLoginRequest) {
-  return request<AppLoginResponse>({
-    url: '/app/auth/sms-login',
+  return request<AppLoginResponse>('/app/auth/sms-login', {
     method: 'POST',
-    data,
+    body: data,
   })
 }
 
 export function wechatLogin(data: AppWechatLoginRequest) {
-  return request<AppWechatLoginResponse>({
-    url: '/app/auth/wechat-login',
+  return request<AppWechatLoginResponse>('/app/auth/wechat-login', {
     method: 'POST',
-    data,
+    body: data,
   })
 }
 
 export function wechatBindMobile(data: AppWechatBindMobileRequest) {
-  return request<AppLoginResponse>({
-    url: '/app/auth/wechat-bind-mobile',
+  return request<AppLoginResponse>('/app/auth/wechat-bind-mobile', {
     method: 'POST',
-    data,
+    body: data,
   })
 }
 
 export function logout() {
-  return request<void>({
-    url: '/app/auth/logout',
+  return request<void>('/app/auth/logout', {
     method: 'POST',
   })
 }
 
 export function getCurrentUser() {
-  return request<CurrentAppUserResponse>({
-    url: '/app/auth/me',
+  return request<CurrentAppUserResponse>('/app/auth/me', {
     method: 'GET',
   })
 }
 
 export function checkLoginStatus() {
-  return request<boolean>({
-    url: '/app/auth/status',
+  return request<boolean>('/app/auth/status', {
     method: 'GET',
+  })
+}
+
+export function getWechatWebQrConfig() {
+  return request<AppWechatWebQrConfigResponse>('/app/auth/wechat-web/qr-config', {
+    method: 'GET',
+  })
+}
+
+export function wechatWebLogin(data: AppWechatWebLoginRequest) {
+  return request<AppWechatLoginResponse>('/app/auth/wechat-web/login', {
+    method: 'POST',
+    body: data,
   })
 }
