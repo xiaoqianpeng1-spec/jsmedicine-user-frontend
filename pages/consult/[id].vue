@@ -149,16 +149,67 @@
         <button class="bottom-consult-btn" @click="startConsultation">立即咨询专家</button>
       </div>
     </div>
+
+    <!-- 咨询表单弹窗 -->
+    <div v-if="showConsultForm" class="consult-modal-overlay" @click.self="closeConsultForm">
+      <div class="consult-modal">
+        <div class="modal-header">
+          <h3>发起咨询</h3>
+          <span class="modal-close" @click="closeConsultForm">×</span>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>咨询专家</label>
+            <input type="text" :value="expert.realName" disabled class="form-input readonly" />
+          </div>
+          <div class="form-group">
+            <label>咨询标题 <span class="required">*</span></label>
+            <input 
+              type="text" 
+              v-model="consultForm.title" 
+              placeholder="请输入咨询标题（限128字）" 
+              maxlength="128"
+              class="form-input"
+            />
+          </div>
+          <div class="form-group">
+            <label>咨询内容 <span class="required">*</span></label>
+            <textarea 
+              v-model="consultForm.content" 
+              placeholder="请详细描述您的问题..." 
+              rows="6"
+              class="form-textarea"
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="closeConsultForm">取消</button>
+          <button class="btn-submit" @click="submitConsultation" :disabled="formSubmitting">
+            {{ formSubmitting ? '提交中...' : '提交咨询' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { expertsApi, type AppExpertResponse } from '~/utils/api/experts'
+import { expertsApi, type AppExpertResponse, type AppQaQuestionRequest } from '~/utils/api/experts'
 
 const router = useRouter()
 const route = useRoute()
+
+// 咨询表单状态
+const showConsultForm = ref(false)
+const formSubmitting = ref(false)
+const consultForm = ref<AppQaQuestionRequest>({
+  title: '',
+  content: '',
+  expertId: undefined,
+  expertCategoryId: undefined
+})
 
 const expert = ref<AppExpertResponse>({
   id: 0,
@@ -214,7 +265,54 @@ const goToConsult = () => {
 }
 
 const startConsultation = () => {
-  alert(`即将进入与 ${expert.value.realName} 的咨询页面`)
+  // 初始化表单
+  consultForm.value = {
+    title: '',
+    content: '',
+    expertId: expert.value.id,
+    expertCategoryId: expert.value.categoryIds?.[0]
+  }
+  showConsultForm.value = true
+}
+
+// 关闭咨询表单
+const closeConsultForm = () => {
+  showConsultForm.value = false
+}
+
+// 提交咨询
+const submitConsultation = async () => {
+  if (!consultForm.value.title.trim()) {
+    alert('请输入咨询标题')
+    return
+  }
+  if (!consultForm.value.content.trim()) {
+    alert('请输入咨询内容')
+    return
+  }
+
+  formSubmitting.value = true
+  try {
+    const response = await expertsApi.createQuestion({
+      title: consultForm.value.title.trim(),
+      content: consultForm.value.content.trim(),
+      expertId: consultForm.value.expertId,
+      expertCategoryId: consultForm.value.expertCategoryId
+    })
+    if (response.success) {
+      alert('咨询已提交成功！即将跳转到我的咨询页面查看记录...')
+      showConsultForm.value = false
+      // 提交成功后跳转到"我的咨询"页面
+      router.push({ path: '/consult', query: { tab: 'myQuestions' } })
+    } else {
+      alert(response.message || '提交失败，请稍后重试')
+    }
+  } catch (err: any) {
+    console.error('提交咨询失败:', err)
+    alert(err.message || '提交失败，请稍后重试')
+  } finally {
+    formSubmitting.value = false
+  }
 }
 
 const formatDate = (date: string) => {
@@ -559,5 +657,170 @@ onMounted(() => {
     width: 120px;
     height: 120px;
   }
+}
+
+/* ===== 咨询表单弹窗样式 ===== */
+.consult-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.consult-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 520px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d5a27;
+  margin: 0;
+}
+
+.modal-close {
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.required {
+  color: #e74c3c;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #2d5a27;
+}
+
+.form-input.readonly {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #2d5a27;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.btn-cancel {
+  padding: 8px 24px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+  border-color: #2d5a27;
+  color: #2d5a27;
+}
+
+.btn-submit {
+  padding: 8px 24px;
+  border: none;
+  border-radius: 6px;
+  background: #2d5a27;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-submit:hover {
+  background: #1f421b;
+}
+
+.btn-submit:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 </style>

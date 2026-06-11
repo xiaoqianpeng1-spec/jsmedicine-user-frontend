@@ -1,6 +1,6 @@
 import type { UseFetchOptions } from '#app'
 
-const BASE_URL = '/api/v1'
+const BASE_URL = ''
 
 export function request<T = any>(url: string, options: UseFetchOptions<T> = {}) {
   const token = useCookie<string | null>('token')

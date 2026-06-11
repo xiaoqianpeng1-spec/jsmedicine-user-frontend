@@ -17,15 +17,17 @@ export default defineNuxtConfig({
   typescript: { strict: true, typeCheck: false },
   runtimeConfig: {
     public: {
-      apiBase: '/api/v1'
+      apiBase: ''
     }
+  },
+  server: {
+    port: 3000
   },
   nitro: {
     devProxy: {
       '/api/v1': {
-        target: 'https://api-test.arez.cc.cd',
-        changeOrigin: true,
-        prependPath: false
+        target: 'https://api-test.arez.cc.cd/api/v1',
+        changeOrigin: true
       }
     }
   }

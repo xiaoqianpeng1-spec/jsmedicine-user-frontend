@@ -1,0 +1,8 @@
+const index_vue_vue_type_style_index_0_scoped_91d292ff_lang = ".knowledge-page[data-v-91d292ff]{background:#f5f7fa;min-height:100vh}.page-header[data-v-91d292ff]{background:#fff;box-shadow:0 2px 8px #0000000f;margin-bottom:24px;padding:16px 20px}.search-input[data-v-91d292ff]{width:400px}.page-content[data-v-91d292ff]{margin:0 auto;max-width:1200px;padding:0 20px}.category-sidebar[data-v-91d292ff]{height:-moz-fit-content;height:fit-content}.card-header[data-v-91d292ff]{font-weight:500}.category-menu[data-v-91d292ff]{border:none}.entry-card[data-v-91d292ff]{cursor:pointer;margin-bottom:16px}.entry-card[data-v-91d292ff] .el-card__body{align-items:center;display:flex;justify-content:space-between;padding:20px}.entry-content[data-v-91d292ff]{flex:1;min-width:0}.entry-title[data-v-91d292ff]{color:#333;font-size:16px;font-weight:500;margin-bottom:8px}.entry-summary[data-v-91d292ff]{color:#666;display:-webkit-box;display:box;font-size:14px;-webkit-line-clamp:2;line-clamp:2;line-height:1.6;margin-bottom:12px;-webkit-box-orient:vertical;box-orient:vertical;overflow:hidden;text-overflow:ellipsis}.entry-meta[data-v-91d292ff]{align-items:center;display:flex;gap:12px}.entry-views[data-v-91d292ff]{color:#999;font-size:13px}.entry-arrow[data-v-91d292ff]{color:#999;flex-shrink:0;font-size:20px;margin-left:16px}.pagination[data-v-91d292ff]{display:flex;justify-content:center;margin-top:32px}@media(max-width:768px){.search-input[data-v-91d292ff]{margin-top:12px;width:100%}.category-sidebar[data-v-91d292ff]{margin-bottom:20px}}";
+
+const indexStyles_BaTa0jsZ = [
+  index_vue_vue_type_style_index_0_scoped_91d292ff_lang
+];
+
+export { indexStyles_BaTa0jsZ as default };
+//# sourceMappingURL=index-styles.BaTa0jsZ.mjs.map

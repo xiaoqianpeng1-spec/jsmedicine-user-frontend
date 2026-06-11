@@ -1,19 +1,19 @@
 <template>
   <div class="home-page">
-    <!-- 轮播大图（网页风格） -->
+    <!-- 轮播大图（使用API数据或默认数据） -->
     <section class="banner">
       <div class="banner-list" :style="{ transform: `translateX(-${currentBanner * 100}%)` }">
-        <div class="banner-item" v-for="(b, i) in banners" :key="i">
-          <img :src="b.image" alt="" />
+        <div class="banner-item" v-for="(b, i) in bannerItems" :key="i">
+          <img :src="b.coverUrl || b.image" alt="" />
           <div class="text">
             <h1>{{ b.title }}</h1>
             <p>{{ b.subtitle }}</p>
-            <button>{{ b.button }}</button>
+            <button @click="goToPage(b.linkUrl || b.path)">{{ b.button || '立即查看' }}</button>
           </div>
         </div>
       </div>
       <div class="dots">
-        <span v-for="(_, i) in banners" :class="{ active: currentBanner === i }" @click="currentBanner = i"></span>
+        <span v-for="(_, i) in bannerItems" :class="{ active: currentBanner === i }" @click="currentBanner = i"></span>
       </div>
     </section>
 
@@ -45,27 +45,32 @@
       </div>
     </section>
 
-    <!-- 最新资讯
-    <section class="news">
+    <!-- API获取的首页分区内容 -->
+    <section v-if="homeSections.length > 0" class="home-sections">
       <div class="container">
-        <div class="head">
-          <h2>最新资讯</h2>
-          <a href="/news">查看更多</a>
-        </div>
-        <div class="list">
-          <div class="item" v-for="(n, i) in newsList" :key="i" @click="goToArticle(n.id)">
-            <img :src="n.image" alt="" />
-            <div class="info">
-              <h4>{{ n.title }}</h4>
-              <div class="meta">
-                <span :class="n.tagClass">{{ n.tag }}</span>
-                <span>{{ n.time }}</span>
+        <div v-for="section in homeSections" :key="section.id" class="section">
+          <div class="section-header">
+            <h2>{{ section.categoryName }}</h2>
+            <p class="section-desc">{{ section.description }}</p>
+          </div>
+          <div class="section-items">
+            <div 
+              v-for="item in section.items" 
+              :key="item.id" 
+              class="section-item"
+              @click="handleItemClick(item)"
+            >
+              <img v-if="item.coverUrl" :src="item.coverUrl" :alt="item.title" />
+              <div class="item-content">
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.subtitle || item.summary }}</p>
+                <span class="content-type">{{ item.contentTypeLabel }}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </section> -->
+    </section>
 
     <!-- 底部 -->
     <footer class="footer">
@@ -77,21 +82,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { contentApi, type AppHomeSectionResponse, type AppHomeItemResponse } from '~/utils/api/content'
 
 const router = useRouter()
-const route = useRoute()
 
 const currentBanner = ref(0)
 let timer: any = null
 
-// 图片全部换成可访问地址
-const banners = ref([
-  { image: 'https://picsum.photos/seed/1/1920/600', title: '中医在线咨询', subtitle: '专业名师在线', button: '立即咨询' },
-  { image: 'https://picsum.photos/seed/2/1920/600', title: '在线学习平台', subtitle: '传承中医智慧', button: '开始学习' },
-  { image: 'https://picsum.photos/seed/3/1920/600', title: '专业考核认证', subtitle: '提升专业水平', button: '参加考核' }
+const loading = ref(false)
+const homeSections = ref<AppHomeSectionResponse[]>([])
+
+// 默认轮播图数据（作为fallback）
+const defaultBanners = ref([
+  { 
+    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1920&h=600&fit=crop', 
+    title: '中医在线咨询', 
+    subtitle: '专业名师在线', 
+    button: '立即咨询', 
+    path: '/consult' 
+  },
+  { 
+    image: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=1920&h=600&fit=crop', 
+    title: '在线学习平台', 
+    subtitle: '传承中医智慧', 
+    button: '开始学习', 
+    path: '/video' 
+  },
+  { 
+    image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1920&h=600&fit=crop', 
+    title: '专业考核认证', 
+    subtitle: '提升专业水平', 
+    button: '参加考核', 
+    path: '/exam' 
+  }
 ])
+
+// 从API获取的轮播图数据（如果有）
+const apiBanners = computed(() => {
+  const bannerSection = homeSections.value.find(s => s.categoryCode === 'BANNER')
+  if (bannerSection && bannerSection.items && bannerSection.items.length > 0) {
+    return bannerSection.items
+  }
+  return []
+})
+
+// 合并后的轮播图数据
+const bannerItems = computed(() => {
+  if (apiBanners.value.length > 0) {
+    return apiBanners.value
+  }
+  return defaultBanners.value
+})
 
 const stats = ref([
   { value: '20000+', label: '用户同时在线学习' },
@@ -112,29 +155,51 @@ const features = ref([
   { title: '官网展示', desc: '支持在WEB浏览器端、浏览平台所发布的内容。在线学习及评价均在移动前端小程序端', path: '/' }
 ])
 
-const newsList = ref([
-  { id: 1, image: 'https://picsum.photos/seed/news1/400/220', title: '首届中澳全科医学教育与基层医疗实践网络研讨会召开在即', tag: '新闻资讯', tagClass: 'red', time: '2024-01-15' },
-  { id: 2, image: 'https://picsum.photos/seed/news2/400/220', title: '中医数字化转型研讨会成功举办', tag: '学术交流', tagClass: 'pink', time: '2024-01-14' },
-  { id: 3, image: 'https://picsum.photos/seed/news3/400/220', title: '中医药高等教育创新发展论坛圆满落幕', tag: '行业动态', tagClass: 'blue', time: '2024-01-13' }
-])
+// 获取首页聚合数据
+const fetchHomeData = async () => {
+  loading.value = true
+  try {
+    const response = await contentApi.getHome()
+    if (response.success && response.data && response.data.sections) {
+      homeSections.value = response.data.sections
+    }
+  } catch (error: any) {
+    console.error('获取首页数据失败:', error)
+    // 使用默认数据
+  } finally {
+    loading.value = false
+  }
+}
 
-// 跳转方法（不会跳登录页）
+// 跳转方法
 const goToPage = (path: string) => {
-  if (path === '/') return // 点击首页 → 不跳转！
+  if (!path || path === '/') return
   router.push(path)
 }
 
-const goToArticle = (id: number) => {
-  router.push(`/news/detail/${id}`)
-}
-
-const goToProfile = () => {
-  router.push('/profile')
+// 处理首页项点击
+const handleItemClick = (item: AppHomeItemResponse) => {
+  if (item.linkUrl) {
+    router.push(item.linkUrl)
+  } else if (item.contentType && item.targetId) {
+    // 根据内容类型跳转
+    const pathMap: Record<string, string> = {
+      'ARTICLE': '/news/detail/',
+      'COURSE': '/course/',
+      'VIDEO': '/video/',
+      'PODCAST': '/podcast/',
+      'BOOK': '/book/',
+      'EXAM': '/exam/'
+    }
+    const basePath = pathMap[item.contentType] || '/'
+    router.push(`${basePath}${item.targetId}`)
+  }
 }
 
 onMounted(() => {
+  fetchHomeData()
   timer = setInterval(() => {
-    currentBanner.value = (currentBanner.value + 1) % banners.value.length
+    currentBanner.value = (currentBanner.value + 1) % bannerItems.value.length
   }, 4000)
 })
 
@@ -142,7 +207,7 @@ onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>
-/* 全局重置（标准网页必备） */
+/* 全局重置 */
 * {
   margin: 0;
   padding: 0;
@@ -153,14 +218,14 @@ body {
   background: #fff;
 }
 
-/* 容器：标准网页宽度 1200px */
+/* 容器 */
 .container {
   width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-/* 轮播图：网页大横幅 */
+/* 轮播图 */
 .banner {
   width: 100%;
   height: 500px;
@@ -185,28 +250,31 @@ body {
 }
 .banner-item .text {
   position: absolute;
-  top: 50%;
-  left: 12%;
-  transform: translateY(-50%);
+  left: 10%;
+  top: 30%;
   color: #fff;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
 }
-.banner-item h1 {
-  font-size: 52px;
+.banner-item .text h1 {
+  font-size: 48px;
   margin-bottom: 16px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
-.banner-item p {
-  font-size: 24px;
+.banner-item .text p {
+  font-size: 20px;
   margin-bottom: 24px;
 }
-.banner-item button {
-  padding: 14px 36px;
-  background: #2d5a27;
+.banner-item .text button {
+  padding: 12px 32px;
+  background: #20c997;
   color: #fff;
   border: none;
-  border-radius: 6px;
-  font-size: 18px;
+  border-radius: 4px;
+  font-size: 16px;
   cursor: pointer;
+  transition: background 0.3s;
+}
+.banner-item .text button:hover {
+  background: #1ba97f;
 }
 .dots {
   position: absolute;
@@ -219,146 +287,168 @@ body {
 .dots span {
   width: 12px;
   height: 12px;
-  background: rgba(255,255,255,0.5);
   border-radius: 50%;
+  background: rgba(255,255,255,0.5);
   cursor: pointer;
+  transition: all 0.3s;
 }
 .dots span.active {
-  background: #2d5a27;
   width: 30px;
   border-radius: 6px;
+  background: #20c997;
 }
 
-/* 数据模块 */
+/* 数据概览 */
 .stats {
-  padding: 90px 0;
-  background: #f8fbf8;
+  padding: 50px 0;
+  background: linear-gradient(135deg, #2d5a27 0%, #38a169 100%);
+  color: #fff;
   text-align: center;
 }
 .stats h2 {
-  font-size: 32px;
-  margin-bottom: 12px;
-}
-.stats .desc {
-  color: #666;
-  margin-bottom: 50px;
-  font-size: 16px;
-}
-.stats .grid {
-  display: flex;
-  justify-content: space-between;
-}
-.stats .item {
-  width: 20%;
-}
-.stats .val {
-  font-size: 36px;
-  font-weight: bold;
-  color: #2d5a27;
+  font-size: 28px;
   margin-bottom: 8px;
 }
-.stats .label {
-  font-size: 16px;
-  color: #666;
+.stats .desc {
+  margin-bottom: 40px;
+  opacity: 0.8;
+}
+.stats .grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 30px;
+}
+.stats .item {
+  text-align: center;
+}
+.stats .item .val {
+  font-size: 36px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.stats .item .label {
+  font-size: 14px;
+  opacity: 0.9;
 }
 
 /* 功能模块 */
 .features {
-  padding: 90px 0;
-  text-align: center;
+  padding: 60px 0;
 }
 .features h2 {
-  font-size: 32px;
-  margin-bottom: 12px;
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 8px;
 }
 .features .desc {
+  text-align: center;
   color: #666;
-  margin-bottom: 50px;
+  margin-bottom: 40px;
 }
 .features .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 30px;
+  gap: 20px;
 }
 .features .card {
-  padding: 40px 24px;
-  background: #fafafa;
+  background: #f8f9fa;
+  padding: 30px;
   border-radius: 8px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.3s;
 }
 .features .card:hover {
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  background: #20c997;
+  color: #fff;
+  transform: translateY(-5px);
 }
 .features .card h3 {
-  font-size: 20px;
+  font-size: 18px;
   margin-bottom: 12px;
 }
 .features .card p {
+  font-size: 14px;
   color: #666;
   line-height: 1.6;
 }
-
-/* 资讯 */
-.news {
-  padding: 90px 0;
-  background: #f8fbf8;
+.features .card:hover p {
+  color: rgba(255,255,255,0.8);
 }
-.news .head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+
+/* 首页分区内容 */
+.home-sections {
+  padding: 60px 0;
+  background: #f5f5f5;
+}
+.section {
   margin-bottom: 40px;
 }
-.news h2 {
-  font-size: 32px;
+.section:last-child {
+  margin-bottom: 0;
 }
-.news a {
-  color: #2d5a27;
-  text-decoration: none;
+.section-header {
+  margin-bottom: 20px;
 }
-.news .list {
-  display: flex;
-  gap: 30px;
+.section-header h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
 }
-.news .item {
-  flex: 1;
-  cursor: pointer;
-}
-.news .item img {
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-.news .item h4 {
-  font-size: 18px;
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
-.news .meta {
-  display: flex;
-  gap: 16px;
-  font-size: 14px;
+.section-desc {
   color: #666;
+  font-size: 14px;
 }
-.news .meta span {
-  padding: 2px 8px;
-  border-radius: 4px;
+.section-items {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
-.red { background: #ffebee; color: #c62828 }
-.pink { background: #fce4ec; color: #ad1457 }
-.blue { background: #e3f2fd; color: #1565c0 }
+.section-item {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+.section-item:hover {
+  transform: translateY(-5px);
+}
+.section-item img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+.item-content {
+  padding: 16px;
+}
+.item-content h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.item-content p {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.content-type {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #f0f0f0;
+  color: #666;
+  font-size: 12px;
+  border-radius: 12px;
+}
 
 /* 底部 */
 .footer {
+  padding: 40px 0;
   background: #333;
-  color: #fff;
-  padding: 30px 0;
-}
-.copyright {
-  text-align: center;
   color: #999;
 }
 </style>

@@ -1,106 +1,124 @@
 <template>
   <div class="book-detail-page">
-    <!-- 顶部导航 -->
-    <section class="detail-header">
-      <div class="container">
-        <button class="back-btn" @click="goBack">
-          <span>←</span> 返回
-        </button>
-      </div>
-    </section>
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
 
-    <!-- 图书信息 -->
-    <section class="book-info-section">
-      <div class="container">
-        <div class="book-info-card">
-          <div class="book-cover-wrapper">
-            <img :src="bookData.coverUrl" :alt="bookData.bookName" class="book-cover-large" />
-          </div>
-          <div class="book-details">
-            <h1 class="book-title">{{ bookData.bookName }}</h1>
-            <p class="book-author">作者：{{ bookData.author }}</p>
-            <p class="book-publisher">出版社：{{ bookData.publisher }}</p>
-            <p class="book-publish-date">出版日期：{{ formatDate(bookData.publishedAt) }}</p>
-            <div class="book-stats">
-              <div class="stat-item">
-                <span class="stat-value">{{ bookData.totalPages }}</span>
-                <span class="stat-label">页数</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-value">{{ bookData.browseCount }}</span>
-                <span class="stat-label">浏览量</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-value">{{ bookData.favoriteCount }}</span>
-                <span class="stat-label">收藏数</span>
-              </div>
+    <!-- 错误状态 -->
+    <div v-else-if="error" class="error-state">
+      <p>{{ error }}</p>
+      <button class="retry-btn" @click="loadBook">重试</button>
+    </div>
+
+    <template v-else>
+      <!-- 顶部导航 -->
+      <section class="detail-header">
+        <div class="container">
+          <button class="back-btn" @click="goBack">
+            <span>←</span> 返回
+          </button>
+        </div>
+      </section>
+
+      <!-- 图书信息 -->
+      <section class="book-info-section">
+        <div class="container">
+          <div class="book-info-card">
+            <div class="book-cover-wrapper">
+              <img :src="bookData.coverUrl" :alt="bookData.bookName" class="book-cover-large" />
+              <div v-if="bookData.favorited" class="favorite-badge">❤️</div>
             </div>
-            <div class="book-intro">
-              <h3>内容简介</h3>
-              <p>{{ bookData.introduction }}</p>
-            </div>
-            <div class="action-buttons">
-              <button 
-                class="btn btn-primary" 
-                @click="startReading"
-              >
-                📖 开始阅读
-              </button>
-              <button 
-                class="btn btn-secondary" 
-                :class="{ active: bookData.favorited }"
-                @click="toggleFavorite"
-              >
-                {{ bookData.favorited ? '❤️ 已收藏' : '🤍 收藏' }}
-              </button>
+            <div class="book-details">
+              <h1 class="book-title">{{ bookData.bookName }}</h1>
+              <p class="book-author">作者：{{ bookData.author }}</p>
+              <p class="book-publisher">出版社：{{ bookData.publisher }}</p>
+              <p class="book-publish-date">出版日期：{{ formatDate(bookData.publishedAt) }}</p>
+              <div class="book-stats">
+                <div class="stat-item">
+                  <span class="stat-value">{{ bookData.totalPages }}</span>
+                  <span class="stat-label">页数</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-value">{{ formatNumber(bookData.browseCount) }}</span>
+                  <span class="stat-label">浏览量</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-value">{{ formatNumber(bookData.favoriteCount) }}</span>
+                  <span class="stat-label">收藏数</span>
+                </div>
+              </div>
+              <div class="book-intro">
+                <h3>内容简介</h3>
+                <p>{{ bookData.introduction }}</p>
+              </div>
+              <div class="action-buttons">
+                <button 
+                  class="btn btn-primary" 
+                  @click="startReading"
+                >
+                  📖 开始阅读
+                </button>
+                <button 
+                  class="btn btn-secondary" 
+                  :class="{ active: bookData.favorited }"
+                  @click="toggleFavorite"
+                >
+                  {{ bookData.favorited ? '❤️ 已收藏' : '🤍 收藏' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- 阅读进度 -->
-    <section class="progress-section" v-if="bookData.progressPercent > 0">
-      <div class="container">
-        <div class="progress-card">
-          <div class="progress-header">
-            <span class="progress-label">阅读进度</span>
-            <span class="progress-percent">{{ bookData.progressPercent }}%</span>
+      <!-- 阅读进度 -->
+      <section class="progress-section" v-if="bookData.progressPercent > 0">
+        <div class="container">
+          <div class="progress-card">
+            <div class="progress-header">
+              <span class="progress-label">阅读进度</span>
+              <span class="progress-percent">{{ bookData.progressPercent }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div 
+                class="progress-fill" 
+                :style="{ width: bookData.progressPercent + '%' }"
+              ></div>
+            </div>
+            <div class="progress-info">
+              <span>已学习 {{ formatStudyTime(bookData.studySeconds) }}</span>
+            </div>
           </div>
-          <div class="progress-bar">
+        </div>
+      </section>
+
+      <!-- 章节目录 -->
+      <section class="chapters-section">
+        <div class="container">
+          <div class="section-header">
+            <h2 class="section-title">📚 章节目录</h2>
+            <span class="chapter-count">共 {{ bookData.chapters.length }} 章</span>
+          </div>
+          <div class="chapters-list">
             <div 
-              class="progress-fill" 
-              :style="{ width: bookData.progressPercent + '%' }"
-            ></div>
-          </div>
-          <div class="progress-info">
-            <span>已学习 {{ formatStudyTime(bookData.studySeconds) }}</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 章节目录 -->
-    <section class="chapters-section">
-      <div class="container">
-        <h2 class="section-title">📚 章节目录</h2>
-        <div class="chapters-list">
-          <div 
-            v-for="chapter in bookData.chapters" 
-            :key="chapter.id"
-            class="chapter-item"
-            @click="goToChapter(chapter.id)"
-          >
-            <span class="chapter-number">{{ chapter.sortOrder }}</span>
-            <span class="chapter-title">{{ chapter.chapterTitle }}</span>
-            <span class="chapter-pages">{{ chapter.pageCount }}页</span>
-          </div>
-          <div v-if="bookData.chapters.length === 0" class="empty-state">
-            <p>暂无章节信息</p>
+              v-for="chapter in bookData.chapters" 
+              :key="chapter.id"
+              class="chapter-item"
+              @click="goToChapter(chapter.id)"
+            >
+              <span class="chapter-number">{{ chapter.sortOrder }}</span>
+              <span class="chapter-title">{{ chapter.chapterTitle }}</span>
+              <span class="chapter-pages">第{{ chapter.startPage }}-{{ chapter.startPage + chapter.pageCount - 1 }}页</span>
+            </div>
+            <div v-if="bookData.chapters.length === 0" class="empty-state">
+              <p>暂无章节信息</p>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -111,6 +129,9 @@ import { booksApi, type AppBookResponse } from '~/utils/api/books'
 
 const router = useRouter()
 const route = useRoute()
+
+const loading = ref(false)
+const error = ref('')
 
 const bookData = ref<AppBookResponse>({
   id: 0,
@@ -154,6 +175,13 @@ const formatStudyTime = (seconds: number) => {
   return `${minutes}分钟`
 }
 
+const formatNumber = (num: number) => {
+  if (num >= 10000) {
+    return (num / 10000).toFixed(1) + '万'
+  }
+  return num.toString()
+}
+
 const startReading = () => {
   if (bookData.value.chapters.length > 0) {
     goToChapter(bookData.value.chapters[0].id)
@@ -169,18 +197,34 @@ const goToChapter = (chapterId: number) => {
   router.push(`/books/${bookData.value.id}/chapter/${chapterId}`)
 }
 
-onMounted(async () => {
+const loadBook = async () => {
+  loading.value = true
+  error.value = ''
+
   const id = parseInt(route.params.id as string)
-  if (id) {
-    try {
-      const response = await booksApi.getBookDetail(id)
-      if (response.success) {
-        bookData.value = response.data
-      }
-    } catch (error) {
-      console.error('Failed to load book detail:', error)
-    }
+  if (!id) {
+    error.value = '无效的图书ID'
+    loading.value = false
+    return
   }
+
+  try {
+    const response = await booksApi.getBookDetail(id)
+    if (response.success) {
+      bookData.value = response.data
+    } else {
+      error.value = response.message || '获取图书详情失败'
+    }
+  } catch (err: any) {
+    error.value = err.message || '网络错误，请稍后重试'
+    console.error('Failed to load book detail:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadBook()
 })
 </script>
 
@@ -189,6 +233,61 @@ onMounted(async () => {
   font-family: "Microsoft YaHei", sans-serif;
   min-height: 100vh;
   background: #f5f7fa;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #2d5a27;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: #666;
+  font-size: 16px;
+}
+
+/* 错误状态 */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 20px;
+}
+
+.error-state p {
+  color: #e53935;
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.error-state .retry-btn {
+  padding: 10px 24px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .container {
@@ -248,6 +347,21 @@ onMounted(async () => {
   object-fit: cover;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.favorite-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .book-details {
@@ -411,11 +525,23 @@ onMounted(async () => {
   padding: 32px 0 60px;
 }
 
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
 .section-title {
   font-size: 20px;
   font-weight: 600;
   color: #333;
-  margin: 0 0 24px 0;
+  margin: 0;
+}
+
+.chapter-count {
+  font-size: 14px;
+  color: #999;
 }
 
 .chapters-list {

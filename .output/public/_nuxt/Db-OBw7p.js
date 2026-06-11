@@ -1,0 +1,1 @@
+import{k as t,$ as o,g as s,d as a,D as n}from"./CzN-NKFH.js";const r={class:"knowledge-detail-page"},c=t({__name:"[id]",setup(d){return o().params.id,(p,e)=>(n(),s("div",r,[...e[0]||(e[0]=[a("h1",null,"知识详情",-1)])]))}});export{c as default};

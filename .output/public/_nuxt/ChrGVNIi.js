@@ -1,0 +1,1 @@
+import{_ as t}from"./DlAUqK2U.js";import{g as o,d as r,D as s}from"./CzN-NKFH.js";const n={},c={class:"certify-page"};function a(_,e){return s(),o("div",c,[...e[0]||(e[0]=[r("h1",null,"学员认证",-1)])])}const i=t(n,[["render",a]]);export{i as default};

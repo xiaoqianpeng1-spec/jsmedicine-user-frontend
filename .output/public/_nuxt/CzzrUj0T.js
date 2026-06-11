@@ -1,0 +1,1 @@
+import{_ as o}from"./DlAUqK2U.js";import{g as s,d as t,D as r}from"./CzN-NKFH.js";const n={},a={class:"favorites-page"};function c(_,e){return r(),s("div",a,[...e[0]||(e[0]=[t("h1",null,"我的收藏",-1)])])}const i=o(n,[["render",c]]);export{i as default};

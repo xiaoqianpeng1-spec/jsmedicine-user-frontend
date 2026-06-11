@@ -1,0 +1,1 @@
+import{_ as t}from"./DlAUqK2U.js";import{D as a,g as s,d as o,M as c}from"./CzN-NKFH.js";const n={},r={class:"auth-layout"},d={class:"auth-content"};function _(e,f){return a(),s("div",r,[o("main",d,[c(e.$slots,"default",{},void 0)])])}const u=t(n,[["render",_],["__scopeId","data-v-9a6bd4f1"]]);export{u as default};

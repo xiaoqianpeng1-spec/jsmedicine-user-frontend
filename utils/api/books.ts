@@ -59,11 +59,18 @@ export interface PageResponse<T> {
   size: number
 }
 
+export interface PageResponseAppBookCategoryResponse {
+  records: AppBookCategoryResponse[]
+  total: number
+  page: number
+  size: number
+}
+
 export interface ApiResponsePageResponseAppBookCategoryResponse {
   success: boolean
   code: string
   message: string
-  data: PageResponse<AppBookCategoryResponse>
+  data: PageResponseAppBookCategoryResponse
 }
 
 export interface BookCategoryQueryParams {
@@ -74,11 +81,18 @@ export interface BookCategoryQueryParams {
   parentId?: number
 }
 
+export interface PageResponseAppBookResponse {
+  records: AppBookResponse[]
+  total: number
+  page: number
+  size: number
+}
+
 export interface ApiResponsePageResponseAppBookResponse {
   success: boolean
   code: string
   message: string
-  data: PageResponse<AppBookResponse>
+  data: PageResponseAppBookResponse
 }
 
 export interface BookQueryParams {

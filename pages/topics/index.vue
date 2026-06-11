@@ -49,15 +49,25 @@
           >
             <div class="topic-image">
               <img :src="topic.coverUrl" :alt="topic.title" />
+              <div v-if="topic.favorited" class="favorite-badge">❤️</div>
             </div>
             <div class="topic-info">
+              <div class="topic-tags">
+                <span 
+                  v-for="tag in topic.tags.slice(0, 3)" 
+                  :key="tag" 
+                  class="topic-tag"
+                >
+                  {{ tag }}
+                </span>
+              </div>
               <h3 class="topic-title">{{ topic.title }}</h3>
               <p class="topic-summary">{{ topic.summary }}</p>
               <div class="topic-meta">
                 <span class="topic-date">{{ formatDate(topic.publishedAt) }}</span>
                 <div class="topic-stats">
-                  <span class="stat-views">👁️ {{ topic.viewCount }}</span>
-                  <span class="stat-favorites">❤️ {{ topic.favoriteCount }}</span>
+                  <span class="stat-views">👁️ {{ formatNumber(topic.viewCount) }}</span>
+                  <span class="stat-favorites">{{ topic.favorited ? '❤️' : '🤍' }} {{ topic.favoriteCount }}</span>
                 </div>
               </div>
             </div>
@@ -99,11 +109,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { topicsApi, type AppTopicResponse } from '~/utils/api/topics'
+import { topicsApi, type AppTopicCardResponse } from '~/utils/api/topics'
 
 const router = useRouter()
 
-const topics = ref<AppTopicResponse[]>([])
+const topics = ref<AppTopicCardResponse[]>([])
 const keyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(8)
@@ -129,6 +139,13 @@ const formatDate = (dateStr: string) => {
     month: 'long',
     day: 'numeric'
   })
+}
+
+const formatNumber = (num: number) => {
+  if (num >= 10000) {
+    return (num / 10000).toFixed(1) + 'w'
+  }
+  return num.toString()
 }
 
 const loadTopics = async () => {
@@ -309,8 +326,37 @@ onMounted(() => {
   transform: scale(1.05);
 }
 
+.favorite-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  font-size: 16px;
+}
+
 .topic-info {
   padding: 16px 20px;
+}
+
+.topic-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.topic-tag {
+  padding: 2px 8px;
+  background: #E8F5E9;
+  color: #2d5a27;
+  font-size: 12px;
+  border-radius: 4px;
 }
 
 .topic-title {

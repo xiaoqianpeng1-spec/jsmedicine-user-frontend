@@ -327,7 +327,13 @@ const handlePasswordLogin = async () => {
     }
   } catch (err: any) {
     console.error('[Login Error]', err)
-    alert(err.message || '账号或密码错误')
+    // 处理登录失败的各种情况
+    const errorMessage = err.message || '登录失败'
+    if (errorMessage.includes('未授权')) {
+      alert('用户名或密码错误，请重新输入')
+    } else {
+      alert(errorMessage)
+    }
   } finally {
     loading.value = false
   }

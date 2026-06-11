@@ -27,6 +27,9 @@
         <div class="topic-header">
           <span class="topic-tag">专题详情</span>
           <h1 class="topic-title">{{ topicData.title }}</h1>
+          <div v-if="topicData.tags.length > 0" class="topic-tags">
+            <span v-for="tag in topicData.tags" :key="tag" class="topic-tag-item">{{ tag }}</span>
+          </div>
         </div>
       </div>
     </section>
@@ -80,29 +83,52 @@
     <!-- 专题资源列表 -->
     <section class="resources-section">
       <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">📚 专题资源</h2>
-          <span class="resource-count">共 {{ topicData.items.length }} 个资源</span>
+        <div v-for="section in topicData.sections" :key="section.sectionType" class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">{{ section.sectionLabel }}</h2>
+            <span class="resource-count">共 {{ section.total }} 个资源</span>
+          </div>
+          
+          <div class="resources-grid">
+            <div 
+              v-for="(item, index) in section.items" 
+              :key="item.resourceId" 
+              class="resource-card"
+              @click="goToResource(item)"
+            >
+              <div class="resource-cover">
+                <img :src="item.coverUrl" :alt="item.title" />
+                <div class="resource-type-badge">{{ item.resourceTypeLabel }}</div>
+              </div>
+              <div class="resource-content">
+                <h3 class="resource-title">{{ item.title }}</h3>
+                <p class="resource-subtitle">{{ item.subtitle }}</p>
+                <div class="resource-tags">
+                  <span v-for="tag in item.tags.slice(0, 2)" :key="tag" class="resource-tag">{{ tag }}</span>
+                </div>
+                <div class="resource-stats">
+                  <span class="stat-item">👁️ {{ item.browseCount }}</span>
+                  <span class="stat-item">{{ item.favorited ? '❤️' : '🤍' }} {{ item.favoriteCount }}</span>
+                  <span v-if="item.progressPercent > 0" class="progress-text">进度 {{ item.progressPercent }}%</span>
+                </div>
+              </div>
+            </div>
+            <div v-if="section.items.length === 0" class="empty-state">
+              <p>该分区暂无资源</p>
+            </div>
+          </div>
+          
+          <button 
+            v-if="section.hasMore" 
+            class="load-more-btn"
+            @click="loadMoreSection(section.sectionType)"
+          >
+            查看更多 →
+          </button>
         </div>
         
-        <div class="resources-list">
-          <div 
-            v-for="(item, index) in topicData.items" 
-            :key="item.id" 
-            class="resource-item"
-            @click="goToResource(item)"
-          >
-            <div class="resource-number">{{ index + 1 }}</div>
-            <div class="resource-icon">{{ getResourceIcon(item.itemType) }}</div>
-            <div class="resource-info">
-              <h3 class="resource-title">{{ item.resource?.title || item.resource?.bookName || item.resource?.name || '资源 ' + item.itemId }}</h3>
-              <p class="resource-type">{{ getResourceTypeName(item.itemType) }}</p>
-            </div>
-            <div class="resource-arrow">→</div>
-          </div>
-          <div v-if="topicData.items.length === 0" class="empty-state">
-            <p>暂无资源</p>
-          </div>
+        <div v-if="topicData.sections.length === 0" class="empty-state">
+          <p>暂无资源</p>
         </div>
       </div>
     </section>
@@ -112,22 +138,23 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { topicsApi, type AppTopicResponse } from '~/utils/api/topics'
+import { topicsApi, type AppTopicDetailResponse } from '~/utils/api/topics'
 
 const router = useRouter()
 const route = useRoute()
 
-const topicData = ref<AppTopicResponse>({
+const topicData = ref<AppTopicDetailResponse>({
   id: 0,
   title: '',
   summary: '',
   learningRequirements: '',
   coverUrl: '',
+  tags: [],
   viewCount: 0,
   publishedAt: '',
   favoriteCount: 0,
   favorited: false,
-  items: []
+  sections: []
 })
 
 const goToHome = () => {
@@ -148,47 +175,39 @@ const formatDate = (dateStr: string) => {
   })
 }
 
-const getResourceIcon = (itemType: string) => {
-  const iconMap: Record<string, string> = {
-    'video': '🎬',
-    'audio': '🎵',
-    'book': '📖',
-    'article': '📄',
-    'exam': '📝',
-    'default': '📎'
-  }
-  return iconMap[itemType] || iconMap['default']
-}
-
-const getResourceTypeName = (itemType: string) => {
-  const typeMap: Record<string, string> = {
-    'video': '视频课程',
-    'audio': '音频课程',
-    'book': '图书',
-    'article': '文章',
-    'exam': '考试',
-    'default': '资源'
-  }
-  return typeMap[itemType] || typeMap['default']
-}
-
 const goToResource = (item: any) => {
   const routes: Record<string, string> = {
+    'VIDEO': '/video',
+    'AUDIO': '/audio',
+    'BOOK': '/books',
+    'ARTICLE': '/articles',
+    'EXAM': '/exam',
     'video': '/video',
     'audio': '/audio',
     'book': '/books',
     'article': '/articles',
     'exam': '/exam'
   }
-  const baseRoute = routes[item.itemType] || ''
-  if (baseRoute) {
-    router.push(`${baseRoute}/${item.itemId}`)
+  const baseRoute = routes[item.resourceType] || routes[item.itemType] || ''
+  const resourceId = item.resourceId || item.itemId
+  if (baseRoute && resourceId) {
+    router.push(`${baseRoute}/${resourceId}`)
+  }
+}
+
+const loadMoreSection = (sectionType: string) => {
+  const topicId = parseInt(route.params.id as string)
+  if (topicId) {
+    router.push(`/topics/${topicId}/sections/${sectionType}`)
   }
 }
 
 const startLearning = () => {
-  if (topicData.value.items.length > 0) {
-    goToResource(topicData.value.items[0])
+  for (const section of topicData.value.sections) {
+    if (section.items.length > 0) {
+      goToResource(section.items[0])
+      return
+    }
   }
 }
 
@@ -304,7 +323,22 @@ onMounted(() => {
   font-size: 24px;
   font-weight: 600;
   color: #333;
-  margin: 0;
+  margin: 0 0 16px 0;
+}
+
+.topic-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.topic-tag-item {
+  padding: 4px 12px;
+  background: #f0f4f0;
+  color: #2d5a27;
+  font-size: 12px;
+  border-radius: 4px;
 }
 
 /* 专题描述 */
@@ -432,11 +466,15 @@ onMounted(() => {
   background: #f8fbf8;
 }
 
+.section-block {
+  margin-bottom: 40px;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .section-title {
@@ -451,69 +489,123 @@ onMounted(() => {
   color: #999;
 }
 
-.resources-list {
+.resources-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.resource-card {
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.resource-item {
-  display: flex;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
-  cursor: pointer;
-  transition: background 0.3s;
+.resource-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
-.resource-item:last-child {
-  border-bottom: none;
+.resource-cover {
+  position: relative;
+  height: 160px;
+  overflow: hidden;
 }
 
-.resource-item:hover {
-  background: #f8fbf8;
+.resource-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.resource-number {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e8f5e9;
+.resource-type-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.9);
   color: #2d5a27;
-  border-radius: 50%;
-  font-size: 14px;
-  font-weight: 500;
-  margin-right: 16px;
+  font-size: 12px;
+  border-radius: 4px;
 }
 
-.resource-icon {
-  font-size: 24px;
-  margin-right: 16px;
-}
-
-.resource-info {
-  flex: 1;
+.resource-content {
+  padding: 16px;
 }
 
 .resource-title {
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.resource-type {
-  font-size: 12px;
+.resource-subtitle {
+  font-size: 13px;
   color: #999;
-  margin: 0;
+  margin: 0 0 10px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.resource-arrow {
-  font-size: 18px;
-  color: #ccc;
+.resource-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.resource-tag {
+  padding: 2px 8px;
+  background: #f0f4f0;
+  color: #2d5a27;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.resource-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-item {
+  font-size: 13px;
+  color: #999;
+}
+
+.progress-text {
+  font-size: 13px;
+  color: #2d5a27;
+  font-weight: 500;
+}
+
+.load-more-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2d5a27;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 20px;
+}
+
+.load-more-btn:hover {
+  background: #e8f5e9;
+  border-color: #2d5a27;
 }
 
 .empty-state {

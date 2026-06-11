@@ -1,0 +1,1 @@
+import{k as t,$ as o,g as s,d as a,D as r}from"./CzN-NKFH.js";const n={class:"doctor-detail-page"},i=t({__name:"[id]",setup(d){return o().params.id,(p,e)=>(r(),s("div",n,[...e[0]||(e[0]=[a("h1",null,"医生详情",-1)])]))}});export{i as default};

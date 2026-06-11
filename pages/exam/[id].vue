@@ -327,8 +327,11 @@ const submitExam = async () => {
     }
   })
 
+  const assessmentId = parseInt(route.query.assessmentId as string) || 0
+
   try {
-    const response = await learningApi.submitExamPaper(examPaper.value.id, {
+    const response = await learningApi.submitExamAssessment(assessmentId, {
+      requestId: `submit_${assessmentId}_${Date.now()}`,
       answers: answerList
     })
     if (response.success) {

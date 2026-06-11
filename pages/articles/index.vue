@@ -39,8 +39,28 @@
       </div>
     </section>
 
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+
+    <!-- 错误状态 -->
+    <div v-else-if="error" class="error-state">
+      <div v-if="error === '未授权，请登录'" class="login-prompt">
+        <div class="login-icon">🔐</div>
+        <h3>需要登录</h3>
+        <p>浏览资讯需要先登录账号</p>
+        <button class="login-btn" @click="goToHome">立即登录</button>
+      </div>
+      <div v-else>
+        <p>{{ error }}</p>
+        <button class="retry-btn" @click="fetchArticles">重试</button>
+      </div>
+    </div>
+
     <!-- 资讯列表 -->
-    <section class="articles-section">
+    <section v-else class="articles-section">
       <div class="container">
         <div class="articles-list">
           <div 
@@ -50,17 +70,19 @@
             @click="goToDetail(article.id)"
           >
             <div class="article-image">
-              <img :src="article.image" :alt="article.title" />
+              <img :src="article.coverUrl || 'https://via.placeholder.com/200x140?text=资讯封面'" :alt="article.title" />
             </div>
             <div class="article-content">
-              <span class="article-tag" :class="article.tagClass">{{ article.tag }}</span>
+              <div class="article-tags">
+                <span v-for="tag in article.tags.slice(0, 2)" :key="tag" class="article-tag">{{ tag }}</span>
+              </div>
               <h3 class="article-title">{{ article.title }}</h3>
               <p class="article-summary">{{ article.summary }}</p>
               <div class="article-footer">
-                <span class="article-author">{{ article.author }}</span>
-                <span class="article-time">{{ article.time }}</span>
-                <span class="article-views">👁️ {{ article.views }}</span>
-                <span class="article-comments">💬 {{ article.comments }}</span>
+                <span class="article-author">{{ article.authorName || article.source }}</span>
+                <span class="article-time">{{ formatDate(article.publishedAt) }}</span>
+                <span class="article-views">👁️ {{ formatNumber(article.viewCount) }}</span>
+                <span class="article-likes">❤️ {{ article.favoriteCount }}</span>
               </div>
             </div>
           </div>
@@ -71,7 +93,7 @@
           <button 
             class="pagination-btn" 
             :disabled="currentPage === 1"
-            @click="currentPage--"
+            @click="handlePrevPage"
           >
             ← 上一页
           </button>
@@ -81,7 +103,7 @@
               :key="page"
               class="page-number"
               :class="{ active: currentPage === page }"
-              @click="currentPage = page"
+              @click="goToPage(page)"
             >
               {{ page }}
             </span>
@@ -89,7 +111,7 @@
           <button 
             class="pagination-btn" 
             :disabled="currentPage === totalPages"
-            @click="currentPage++"
+            @click="handleNextPage"
           >
             下一页 →
           </button>
@@ -100,15 +122,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { contentApi, type AppArticleResponse } from '~/utils/api/content'
 
 const router = useRouter()
 
 const activeTab = ref('all')
 const searchKeyword = ref('')
 const currentPage = ref(1)
-const totalPages = ref(5)
+const pageSize = 10
+const total = ref(0)
+const loading = ref(false)
+const error = ref('')
+
+const articles = ref<AppArticleResponse[]>([])
 
 const filterTabs = [
   { id: 'all', name: '全部' },
@@ -118,80 +146,96 @@ const filterTabs = [
   { id: 'research', name: '研究成果' }
 ]
 
-const articles = ref([
-  {
-    id: 1,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=medical%20conference%20professional%20news&image_size=landscape_4_3',
-    title: '首届中澳全科医学教育与基层医疗实践网络研讨会召开在即',
-    summary: '本次研讨会将汇聚国内外全科医学领域的专家学者，共同探讨全科医学教育的创新模式和基层医疗实践的发展方向...',
-    tag: '新闻资讯',
-    tagClass: 'tag-red',
-    author: '中医在线',
-    time: '2024-01-15',
-    views: 435678,
-    comments: 43
-  },
-  {
-    id: 2,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20research%20laboratory&image_size=landscape_4_3',
-    title: '中医药数字化转型研讨会成功举办',
-    summary: '会议围绕中医药数字化转型的前沿技术、应用场景和发展趋势进行了深入交流，展示了多项创新成果...',
-    tag: '学术交流',
-    tagClass: 'tag-pink',
-    author: '学术部',
-    time: '2024-01-14',
-    views: 324567,
-    comments: 38
-  },
-  {
-    id: 3,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=traditional%20Chinese%20medicine%20education%20classroom&image_size=landscape_4_3',
-    title: '中医药高等教育创新发展论坛圆满落幕',
-    summary: '来自全国各大中医药院校的专家学者齐聚一堂，就中医药人才培养、课程改革等议题展开研讨...',
-    tag: '行业动态',
-    tagClass: 'tag-blue',
-    author: '教育频道',
-    time: '2024-01-13',
-    views: 298765,
-    comments: 52
-  },
-  {
-    id: 4,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20herbs%20research%20scientific&image_size=landscape_4_3',
-    title: '中医药防治新冠病毒研究取得新进展',
-    summary: '最新研究表明，中医药在新冠病毒防治中具有显著疗效，为全球抗疫提供了中国方案...',
-    tag: '研究成果',
-    tagClass: 'tag-green',
-    author: '科研中心',
-    time: '2024-01-12',
-    views: 567890,
-    comments: 89
-  },
-  {
-    id: 5,
-    image: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20conference%20event&image_size=landscape_4_3',
-    title: '2024年全国中医药工作会议在北京召开',
-    summary: '会议总结了过去一年中医药事业发展取得的成就，部署了新一年的重点工作任务...',
-    tag: '新闻资讯',
-    tagClass: 'tag-red',
-    author: '中医在线',
-    time: '2024-01-11',
-    views: 789012,
-    comments: 120
-  }
-])
+const totalPages = computed(() => {
+  return Math.ceil(total.value / pageSize)
+})
 
 const pageNumbers = computed(() => {
-  return Array.from({ length: totalPages.value }, (_, i) => i + 1)
+  return Array.from({ length: Math.min(totalPages.value, 10) }, (_, i) => i + 1)
 })
+
+const formatNumber = (num: number) => {
+  if (num >= 10000) {
+    return (num / 10000).toFixed(1) + 'w'
+  }
+  return num.toString()
+}
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return ''
+  try {
+    const date = new Date(dateStr)
+    const year = date.getFullYear()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    return `${year}-${month}-${day}`
+  } catch {
+    return dateStr
+  }
+}
+
+const fetchArticles = async () => {
+  loading.value = true
+  error.value = ''
+
+  try {
+    const data: any = await contentApi.getArticles({
+      page: currentPage.value,
+      size: pageSize,
+      keyword: searchKeyword.value
+    })
+
+    if (data.success && data.data) {
+      articles.value = data.data.records || []
+      total.value = data.data.total || 0
+    } else {
+      error.value = data.message || '获取资讯列表失败'
+    }
+  } catch (err: any) {
+    error.value = err.message || '网络错误，请稍后重试'
+    console.error('获取资讯列表失败:', err)
+  } finally {
+    loading.value = false
+  }
+}
 
 const goToDetail = (id: number) => {
   router.push(`/articles/detail/${id}`)
 }
 
 const handleSearch = () => {
-  console.log('搜索:', searchKeyword.value)
+  currentPage.value = 1
+  fetchArticles()
 }
+
+const handlePrevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    fetchArticles()
+  }
+}
+
+const handleNextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+    fetchArticles()
+  }
+}
+
+const goToPage = (page: number) => {
+  if (page !== currentPage.value) {
+    currentPage.value = page
+    fetchArticles()
+  }
+}
+
+const goToHome = () => {
+  router.push('/')
+}
+
+onMounted(() => {
+  fetchArticles()
+})
 </script>
 
 <style scoped>
@@ -294,6 +338,86 @@ const handleSearch = () => {
   color: #2d5a27;
 }
 
+/* 加载状态 */
+.loading-state {
+  text-align: center;
+  padding: 100px 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #2d5a27;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 错误状态 */
+.error-state {
+  text-align: center;
+  padding: 100px 0;
+}
+
+.error-state p {
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.retry-btn {
+  padding: 10px 24px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 登录提示 */
+.login-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px;
+  background: #f8fbf8;
+  border-radius: 12px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.login-icon {
+  font-size: 48px;
+}
+
+.login-prompt h3 {
+  font-size: 20px;
+  color: #333;
+  margin: 0;
+}
+
+.login-prompt p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.login-btn {
+  padding: 12px 32px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
 /* 资讯列表区域 */
 .articles-section {
   padding: 50px 0;
@@ -340,34 +464,19 @@ const handleSearch = () => {
   flex-direction: column;
 }
 
-.article-tag {
-  display: inline-block;
-  align-self: flex-start;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
+.article-tags {
+  display: flex;
+  gap: 8px;
   margin-bottom: 12px;
 }
 
-.tag-red {
-  background: #FFEBEE;
-  color: #C62828;
-}
-
-.tag-pink {
-  background: #FCE4EC;
-  color: #AD1457;
-}
-
-.tag-blue {
-  background: #E3F2FD;
-  color: #1565C0;
-}
-
-.tag-green {
+.article-tag {
+  display: inline-block;
+  padding: 4px 12px;
   background: #E8F5E9;
-  color: #2E7D32;
+  color: #22C55E;
+  font-size: 12px;
+  border-radius: 4px;
 }
 
 .article-title {

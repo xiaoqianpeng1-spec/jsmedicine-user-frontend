@@ -11,7 +11,16 @@
     <!-- 筛选区域 -->
     <section class="filter-section">
       <div class="container">
-        <div class="filter-tabs">
+        <div v-if="categoriesLoading" class="loading-tabs">
+          <div class="loading-tab"></div>
+          <div class="loading-tab"></div>
+          <div class="loading-tab"></div>
+        </div>
+        <div v-else-if="categoriesError" class="error-message">
+          <p>{{ categoriesError }}</p>
+          <button class="retry-btn" @click="loadCategories">重试</button>
+        </div>
+        <div v-else class="filter-tabs">
           <button 
             v-for="category in categories" 
             :key="category.id"
@@ -46,7 +55,20 @@
     <!-- 图书列表 -->
     <section class="books-section">
       <div class="container">
-        <div class="books-grid">
+        <!-- 加载状态 -->
+        <div v-if="booksLoading" class="loading-state">
+          <div class="spinner"></div>
+          <p>加载中...</p>
+        </div>
+
+        <!-- 错误状态 -->
+        <div v-else-if="booksError" class="error-state">
+          <p>{{ booksError }}</p>
+          <button class="retry-btn" @click="loadBooks">重试</button>
+        </div>
+
+        <!-- 图书卡片 -->
+        <div v-else class="books-grid">
           <div 
             v-for="book in books" 
             :key="book.id" 
@@ -55,19 +77,26 @@
           >
             <div class="book-cover">
               <img :src="book.coverUrl" :alt="book.bookName" />
+              <div v-if="book.favorited" class="favorite-badge">❤️</div>
             </div>
             <div class="book-info">
               <h3 class="book-title">{{ book.bookName }}</h3>
               <p class="book-author">{{ book.author }}</p>
+              <p class="book-publisher">{{ book.publisher }}</p>
               <p class="book-desc">{{ book.introduction }}</p>
               <div class="book-meta">
                 <span class="book-pages">{{ book.totalPages }} 页</span>
                 <span class="book-reads">📖 {{ book.browseCount }} 人在读</span>
+                <span class="book-favorites">❤️ {{ book.favoriteCount }}</span>
+              </div>
+              <div v-if="book.progressPercent > 0" class="progress-bar">
+                <div class="progress-fill" :style="{ width: book.progressPercent + '%' }"></div>
+                <span class="progress-text">已读 {{ book.progressPercent }}%</span>
               </div>
             </div>
           </div>
         </div>
-        <div v-if="books.length === 0" class="empty-state">
+        <div v-if="!booksLoading && !booksError && books.length === 0" class="empty-state">
           <p>暂无图书</p>
         </div>
       </div>
@@ -111,12 +140,16 @@ const activeCategoryId = ref(0)
 const categories = ref<AppBookCategoryResponse[]>([
   { id: 0, parentId: 0, categoryName: '全部', sortOrder: 0 }
 ])
+const categoriesLoading = ref(false)
+const categoriesError = ref('')
 
 const books = ref<AppBookResponse[]>([])
 const keyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(6)
 const total = ref(0)
+const booksLoading = ref(false)
+const booksError = ref('')
 
 const totalPages = computed(() => {
   return Math.ceil(total.value / pageSize.value)
@@ -133,6 +166,9 @@ const goToDetail = (id: number) => {
 }
 
 const loadBooks = async () => {
+  booksLoading.value = true
+  booksError.value = ''
+
   try {
     const response = await booksApi.getBooks({
       page: currentPage.value,
@@ -145,9 +181,14 @@ const loadBooks = async () => {
       total.value = response.data.total
       currentPage.value = response.data.page
       pageSize.value = response.data.size
+    } else {
+      booksError.value = response.message || '获取图书列表失败'
     }
-  } catch (error) {
-    console.error('Failed to load books:', error)
+  } catch (err: any) {
+    booksError.value = err.message || '网络错误，请稍后重试'
+    console.error('Failed to load books:', err)
+  } finally {
+    booksLoading.value = false
   }
 }
 
@@ -158,6 +199,9 @@ const goToPage = (page: number) => {
 }
 
 const loadCategories = async () => {
+  categoriesLoading.value = true
+  categoriesError.value = ''
+
   try {
     const response = await booksApi.getBookCategories({
       page: 1,
@@ -169,8 +213,11 @@ const loadCategories = async () => {
         ...response.data.records
       ]
     }
-  } catch (error) {
-    console.error('Failed to load categories:', error)
+  } catch (err: any) {
+    categoriesError.value = err.message || '获取分类失败'
+    console.error('Failed to load categories:', err)
+  } finally {
+    categoriesLoading.value = false
   }
 }
 
@@ -243,9 +290,92 @@ onMounted(() => {
   border-color: #2d5a27;
 }
 
+/* 加载状态 */
+.loading-tabs {
+  display: flex;
+  gap: 12px;
+}
+
+.loading-tab {
+  width: 80px;
+  height: 40px;
+  background: #f0f0f0;
+  border-radius: 25px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* 错误提示 */
+.error-message {
+  padding: 16px;
+  background: #fff3f3;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.error-message p {
+  color: #e53935;
+  margin: 0 0 12px 0;
+}
+
+.error-message .retry-btn {
+  padding: 8px 20px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
 /* 图书列表区域 */
 .books-section {
   padding: 50px 0;
+}
+
+/* 加载状态 */
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #2d5a27;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 错误状态 */
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.error-state p {
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.error-state .retry-btn {
+  padding: 10px 24px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .books-grid {
@@ -279,6 +409,20 @@ onMounted(() => {
   object-fit: cover;
 }
 
+.favorite-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  font-size: 16px;
+}
+
 .book-badge {
   position: absolute;
   top: 12px;
@@ -305,6 +449,12 @@ onMounted(() => {
 .book-author {
   font-size: 14px;
   color: #2d5a27;
+  margin: 0 0 4px 0;
+}
+
+.book-publisher {
+  font-size: 12px;
+  color: #999;
   margin: 0 0 8px 0;
 }
 
@@ -324,9 +474,36 @@ onMounted(() => {
 }
 
 .book-pages,
-.book-reads {
+.book-reads,
+.book-favorites {
   font-size: 12px;
   color: #999;
+}
+
+/* 进度条 */
+.progress-bar {
+  position: relative;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2d5a27 0%, #38a169 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  position: absolute;
+  right: 0;
+  top: -18px;
+  font-size: 12px;
+  color: #2d5a27;
+  font-weight: 500;
 }
 
 .empty-state {

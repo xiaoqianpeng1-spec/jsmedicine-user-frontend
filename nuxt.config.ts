@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  compatibilityDate: '2024-11-01',
+  compatibilityDate: '2026-06-09',
   devtools: { enabled: true },
 
   modules: ['@pinia/nuxt', '@element-plus/nuxt'],
@@ -8,7 +8,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: (process as any).env.NUXT_PUBLIC_API_BASE || '/api/v1',
+      apiBase: (process as any).env.NUXT_PUBLIC_API_BASE || '',
     },
   },
 
@@ -27,9 +27,13 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    routeRules: {
-      '/api/**': { proxy: `${(process as any).env.NUXT_API_BASE || 'http://localhost:8080'}/api/**` },
-    },
+    devProxy: {
+      '/api': {
+        target: 'https://api-test.arez.cc.cd',
+        changeOrigin: true,
+        pathRewrite: { '^/api': '/api' }
+      }
+    }
   },
 
   elementPlus: {

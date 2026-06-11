@@ -19,47 +19,67 @@
       </div>
     </div>
 
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+
+    <!-- 错误状态 -->
+    <div v-else-if="error" class="error-state">
+      <div v-if="error === '未授权，请登录'" class="login-prompt">
+        <div class="login-icon">🔐</div>
+        <h3>需要登录</h3>
+        <p>收听音频课程需要先登录账号</p>
+        <button class="login-btn" @click="goToHome">立即登录</button>
+      </div>
+      <div v-else>
+        <p>{{ error }}</p>
+        <button class="retry-btn" @click="fetchPodcasts">重试</button>
+      </div>
+    </div>
+
     <!-- 音频列表 -->
-    <section class="audio-section">
+    <section v-else class="audio-section">
       <div class="container">
         <div class="audio-grid">
           <div 
-            v-for="audio in audios" 
-            :key="audio.id" 
+            v-for="podcast in podcasts" 
+            :key="podcast.id" 
             class="audio-card"
-            @click="goToDetail(audio.id)"
+            @click="goToDetail(podcast.id)"
           >
             <div class="audio-cover">
-              <img :src="audio.cover" :alt="audio.title" />
+              <img :src="podcast.coverUrl || 'https://via.placeholder.com/300x200?text=音频封面'" :alt="podcast.title" />
               <div class="audio-play-overlay">
                 <span class="play-btn">🎵</span>
               </div>
             </div>
-            <h3 class="audio-title">{{ audio.title }}</h3>
-            <p class="audio-desc">{{ audio.desc }}</p>
+            <h3 class="audio-title">{{ podcast.title }}</h3>
+            <p class="audio-desc">{{ podcast.summary }}</p>
             <div class="audio-tags">
-              <span class="audio-tag" :class="audio.tagClass">{{ audio.tag }}</span>
+              <span v-for="tag in podcast.tags" :key="tag" class="audio-tag tag-green">{{ tag }}</span>
             </div>
             <div class="audio-stats">
-              <span class="stat-views">👁️ {{ audio.views }}</span>
-              <span class="stat-likes">⭐ {{ audio.likes }}</span>
+              <span class="stat-views">👁️ {{ formatNumber(podcast.browseCount) }}</span>
+              <span class="stat-likes">⭐ {{ podcast.favoriteCount }}</span>
             </div>
           </div>
         </div>
         
         <!-- 分页 -->
-        <div class="pagination">
-          <button class="page-btn prev" @click="prevPage">‹</button>
+        <div v-if="totalPages > 1" class="pagination">
+          <button class="page-btn prev" :disabled="currentPage === 1" @click="prevPage">‹</button>
           <button 
-            v-for="page in totalPages" 
+            v-for="page in displayPages" 
             :key="page" 
             class="page-btn"
             :class="{ active: currentPage === page }"
-            @click="currentPage = page"
+            @click="goToPage(page)"
           >
             {{ page }}
           </button>
-          <button class="page-btn next" @click="nextPage">›</button>
+          <button class="page-btn next" :disabled="currentPage === totalPages" @click="nextPage">›</button>
         </div>
       </div>
     </section>
@@ -67,138 +87,64 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { learningApi, type AppPodcastResponse } from '~/utils/api/learning'
 
 const router = useRouter()
 
+const loading = ref(false)
+const error = ref('')
 const currentPage = ref(1)
 const pageSize = 12
+const total = ref(0)
 
-const audios = ref([
-  {
-    id: 1,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
-    title: '实用中医理论基础',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-red',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 2,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
-    title: '实用中医方药学',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-blue',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 3,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
-    title: '实用中医药适宜技术',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-purple',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 4,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20green%20style%20traditional&image_size=landscape_4_3',
-    title: '实用针灸推拿学',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-green',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 5,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
-    title: '实用中医理论基础',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-red',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 6,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
-    title: '实用中医方药学',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-blue',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 7,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
-    title: '实用中医药适宜技术',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-purple',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 8,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20green%20style%20traditional&image_size=landscape_4_3',
-    title: '实用针灸推拿学',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-green',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 9,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20gray%20style%20traditional&image_size=landscape_4_3',
-    title: '实用中医理论基础',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-red',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 10,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20blue%20style%20traditional&image_size=landscape_4_3',
-    title: '实用中医方药学',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-blue',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 11,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20purple%20style%20traditional&image_size=landscape_4_3',
-    title: '实用中医药适宜技术',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-purple',
-    views: 435678,
-    likes: 43
-  },
-  {
-    id: 12,
-    cover: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=Chinese%20medicine%20audio%20cover%20green%20style%20traditional&image_size=landscape_4_3',
-    title: '实用针灸推拿学',
-    desc: '奇经八脉的功能和分布',
-    tag: '中医',
-    tagClass: 'tag-green',
-    views: 435678,
-    likes: 43
+const podcasts = ref<AppPodcastResponse[]>([])
+
+const totalPages = computed(() => Math.ceil(total.value / pageSize))
+
+const displayPages = computed(() => {
+  const pages: number[] = []
+  const start = Math.max(1, currentPage.value - 2)
+  const end = Math.min(totalPages.value, currentPage.value + 2)
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
   }
-])
+  return pages
+})
 
-const totalPages = computed(() => Math.ceil(audios.value.length / pageSize))
+// 格式化数字
+const formatNumber = (num: number) => {
+  if (num >= 10000) {
+    return (num / 10000).toFixed(1) + 'w'
+  }
+  return num.toString()
+}
+
+// 获取播客列表
+const fetchPodcasts = async () => {
+  loading.value = true
+  error.value = ''
+
+  try {
+    const data: any = await learningApi.getPodcasts({
+      page: currentPage.value,
+      size: pageSize
+    })
+
+    if (data.success && data.data) {
+      podcasts.value = data.data.records || []
+      total.value = data.data.total || 0
+    } else {
+      error.value = data.message || '获取音频列表失败'
+    }
+  } catch (err: any) {
+    error.value = err.message || '网络错误，请稍后重试'
+    console.error('获取播客列表失败:', err)
+  } finally {
+    loading.value = false
+  }
+}
 
 const goToHome = () => {
   router.push('/')
@@ -208,17 +154,29 @@ const goToDetail = (id: number) => {
   router.push(`/audio/${id}`)
 }
 
+const goToPage = (page: number) => {
+  currentPage.value = page
+  fetchPodcasts()
+}
+
 const prevPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--
+    fetchPodcasts()
   }
 }
 
 const nextPage = () => {
   if (currentPage.value < totalPages.value) {
     currentPage.value++
+    fetchPodcasts()
   }
 }
+
+// 页面加载时获取数据
+onMounted(() => {
+  fetchPodcasts()
+})
 </script>
 
 <style scoped>
@@ -286,6 +244,95 @@ const nextPage = () => {
   color: #ccc;
 }
 
+/* 加载状态 */
+.loading-state {
+  text-align: center;
+  padding: 100px 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #2d5a27;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: #666;
+}
+
+/* 错误状态 */
+.error-state {
+  text-align: center;
+  padding: 100px 0;
+}
+
+.error-state p {
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.retry-btn {
+  padding: 10px 24px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 登录提示 */
+.login-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px;
+  background: #f8fbf8;
+  border-radius: 12px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.login-icon {
+  font-size: 48px;
+}
+
+.login-prompt h3 {
+  font-size: 20px;
+  color: #333;
+  margin: 0;
+}
+
+.login-prompt p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.login-btn {
+  padding: 12px 32px;
+  background: #2d5a27;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.login-btn:hover {
+  background: #3d7a37;
+}
+
 /* 音频列表区域 */
 .audio-section {
   padding: 30px 0 50px;
@@ -350,31 +397,21 @@ const nextPage = () => {
   font-size: 12px;
   color: #999;
   margin: 0 0 8px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .audio-tags {
   margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .audio-tag {
   padding: 2px 8px;
   font-size: 11px;
   border-radius: 2px;
-}
-
-.tag-red {
-  background: #FDECEC;
-  color: #D93030;
-}
-
-.tag-blue {
-  background: #E8F4FD;
-  color: #3B82F6;
-}
-
-.tag-purple {
-  background: #F3E8FF;
-  color: #8B5CF6;
 }
 
 .tag-green {
@@ -414,7 +451,7 @@ const nextPage = () => {
   transition: all 0.3s;
 }
 
-.page-btn:hover {
+.page-btn:hover:not(:disabled) {
   border-color: #2d5a27;
   color: #2d5a27;
 }
@@ -423,6 +460,11 @@ const nextPage = () => {
   background: #2d5a27;
   border-color: #2d5a27;
   color: #fff;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .page-btn.prev,
